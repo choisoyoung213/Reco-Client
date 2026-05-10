@@ -4,50 +4,52 @@ import { useNavigate } from "react-router-dom";
 import BottomNav from "../components/BottomNav";
 
 const ScanPage = () => {
-    const videoRef = useRef(null);
-    const streamRef = useRef(null);
-    const navigate = useNavigate();
+  const videoRef = useRef(null);
+  const streamRef = useRef(null);
+  const navigate = useNavigate();
 
-    useEffect(() => {
-        const startCamera = async () => {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: "environment" }, // 후면 카메라 사용
-                });
-
-                // 스트림을 ref에 저장해서 나중에 끄기 편하게 만듦
-                streamRef.current = stream;
-
-                if (videoRef.current) {
-                    videoRef.current.srcObject = stream;
-                }
-            } catch (err) {
-                console.error("카메라 접근 오류:", err);
-                alert("카메라 권한을 허용해주세요.");
-                navigate(-1);
-            }
-        };
-
-        startCamera();
-
-        return () => {
-      if (streamRef.current) {
-        // 모든 비디오 트랙을 하나씩 꺼줍니다 (가장 확실한 방법)
-        streamRef.current.getTracks().forEach((track) => {
-          track.stop();
+  useEffect(() => {
+    const startCamera = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "environment" },
         });
-        streamRef.current = null;
+        streamRef.current = stream;
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+      } catch (err) {
+        console.error(err);
+        navigate(-1);
+      }
+    };
+
+    startCamera();
+
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((t) => t.stop());
       }
     };
   }, [navigate]);
 
+  const handleCapture = () => {
+    navigate("/result");
+  };
+
   return (
     <Container>
       <BackButton onClick={() => navigate(-1)}>←</BackButton>
-      <GuideText>분리배출할 품목을<br/>가이드 안에 맞춰주세요</GuideText>
+      <GuideText>
+        분리배출할 품목을
+        <br />
+        가이드 안에 맞춰주세요
+      </GuideText>
+
       <Video ref={videoRef} autoPlay playsInline muted />
       <ScanFrame />
-      <BottomNav />
+
+      <BottomNav onCapture={handleCapture} />
     </Container>
   );
 };
@@ -98,8 +100,7 @@ const ScanFrame = styled.div`
   height: 250px;
   border: 3px solid #53b175;
   border-radius: 20px;
-  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5); /* 프레임 밖 어둡게 */
-  z-index: 5;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
 `;
 
 export default ScanPage;

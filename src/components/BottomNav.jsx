@@ -1,17 +1,24 @@
 // src/components/BottomNav.jsx
 import React from "react";
 import styled from "styled-components";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
-// 이미지 import 경로를 확인해서 옮겨오세요
+// 기존 아이콘들
 import HomeIcon from "../assets/img/varhome.svg";
 import LocationIcon from "../assets/img/varlocation.svg";
+import CameraIcon from "../assets/img/varcamera.svg";
 import ActivityIcon from "../assets/img/varactivity.svg";
 import ProfileIcon from "../assets/img/varprofile.svg";
-import CameraIcon from "../assets/img/varcamera.svg";
+
+// 활성화 시 아이콘들
+import HomeOnIcon from "../assets/img/varhomeOn.svg";
+import LocationOnIcon from "../assets/img/varlocationOn.svg";
+import ScanIcon from "../assets/img/varscanIcon.svg";
+import ActivityOnIcon from "../assets/img/varactivityOn.svg";
+import ProfileOnIcon from "../assets/img/varprofileOn.svg";
 
 // --- 스타일 (기존 코드 유지) ---
-const BottomNav = styled.div`
+const NavContainer = styled.div`
   position: fixed; /* 절대위치보다는 화면 하단 고정 */
   bottom: 0;
   width: 393px;
@@ -55,18 +62,48 @@ const CameraWrapper = styled.div`
 const StyledCameraIcon = styled.img` width: 32px; height: 32px; object-fit: contain; `;
 
 // --- 컴포넌트 ---
-const BottomNavComponent = () => {
+const BottomNavComponent = ({ onCapture }) => {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const isHome = location.pathname === "/";
+  const isLocation = location.pathname === "/location";
+  const isScan = location.pathname === "/scan";
+  const isActivity = location.pathname === "/activity";
+  const isProfile = location.pathname === "/profile";
+
+  const handleCameraClick = () => {
+    if (isScan && onCapture) {
+      // 현재 스캔 페이지에 있고 촬영 함수가 전달되었다면 사진 촬영!
+      onCapture();
+    } else {
+      // 그 외의 페이지라면 스캔 페이지로 이동
+      navigate('/scan');
+    }
+  };
+
   return (
-    <BottomNav>
-      <NavItem onClick={() => navigate('/')}><NavIcon src={HomeIcon} />Home</NavItem>
-      <NavItem onClick={() => navigate('/')}><NavIcon src={LocationIcon} />Location</NavItem>
-      <CameraWrapper>
-        <StyledCameraIcon src={CameraIcon} alt="Camera" />
+    <NavContainer>
+      <NavItem onClick={() => navigate('/')}>
+        <NavIcon src={isHome ? HomeOnIcon : HomeIcon} />Home
+      </NavItem>
+      
+      <NavItem onClick={() => navigate('/location')}>
+        <NavIcon src={isLocation ? LocationOnIcon : LocationIcon} />Location
+      </NavItem>
+
+      <CameraWrapper onClick={handleCameraClick}>
+        <StyledCameraIcon src={isScan ? ScanIcon : CameraIcon} />
       </CameraWrapper>
-      <NavItem onClick={() => navigate('/')}><NavIcon src={ActivityIcon} />Activity</NavItem>
-      <NavItem onClick={() => navigate('/')}><NavIcon src={ProfileIcon} />Profile</NavItem>
-    </BottomNav>
+
+      <NavItem onClick={() => navigate('/activity')}>
+        <NavIcon src={isActivity ? ActivityOnIcon : ActivityIcon} />Activity
+      </NavItem>
+      
+      <NavItem onClick={() => navigate('/profile')}>
+        <NavIcon src={isProfile ? ProfileOnIcon : ProfileIcon} />Profile
+      </NavItem>
+    </NavContainer>
   );
 };
 export default BottomNavComponent;
