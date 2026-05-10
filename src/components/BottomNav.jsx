@@ -70,7 +70,7 @@ const BottomNavComponent = ({ onCapture }) => {
   const isLocation = location.pathname === "/location";
   const isScan = location.pathname === "/scan";
   const isActivity = location.pathname === "/activity";
-  const isProfile = location.pathname === "/profile";
+  const isProfile = location.pathname === "/mypage";
 
   const handleCameraClick = () => {
     if (isScan && onCapture) {
@@ -100,7 +100,7 @@ const BottomNavComponent = ({ onCapture }) => {
         <NavIcon src={isActivity ? ActivityOnIcon : ActivityIcon} />Activity
       </NavItem>
       
-      <NavItem onClick={() => navigate('/profile')}>
+      <NavItem onClick={() => navigate('/mypage')}>
         <NavIcon src={isProfile ? ProfileOnIcon : ProfileIcon} />Profile
       </NavItem>
     </NavContainer>

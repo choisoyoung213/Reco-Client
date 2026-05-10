@@ -12,6 +12,11 @@ import GlassDetail from "../pages/GlassDetail";
 import FoodDetail from "../pages/FoodDetail";
 import CanDetail from "../pages/CanDetail"; 
 import TrashDetail from "../pages/TrashDetail";
+import MyPage from "../pages/MyPage.jsx";
+import Login from "../pages/Login.jsx";
+import SignUp from "../pages/SignUp.jsx";
+import Search from "../pages/Search.jsx";
+import Loading from "../pages/Loading.jsx";
 
 // import SignUp from "../pages/SignUp.jsx";
 // import Login from "../pages/Login.jsx";
@@ -38,6 +43,11 @@ const router = createBrowserRouter([
   { path: "/scan", element: <ScanPage /> },
   { path: "/result", element: <ResultPage /> },
   { path: "/chatbot", element: <ChatBot /> },
+  { path: "/mypage", element: <MyPage /> },
+  { path: "/login", element: <Login /> },
+  { path: "/signup", element: <SignUp /> },
+  { path: "/search", element: <Search /> },
+  { path: "/loading", element: <Loading /> }
 ]);
 
 export default router;
