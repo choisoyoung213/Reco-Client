@@ -32,7 +32,14 @@ const IconButton = styled.button`
   border: none;
   background: white;
   cursor: pointer;
+  padding: 0;
 `
+
+const IconImg = styled.img`
+  width: 44px;
+  height: 44px;
+`
+
 const Divider = styled.div`
   display: flex;
   align-items: center;
@@ -47,16 +54,39 @@ const Line = styled.div`
 `
 
 const SnsLogin = () => {
+  const handleGoogleLogin = () => {
+    const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID
+    const REDIRECT_URI = "http://localhost:5173/oauth/google"
+    const SCOPE = "email profile"
+
+    window.location.href =
+      `https://accounts.google.com/o/oauth2/v2/auth?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=${SCOPE}`
+  }
+
+  const handleKakaoLogin = () => {
+    const REST_API_KEY = import.meta.env.VITE_KAKAO_REST_API_KEY
+    const REDIRECT_URI = "http://localhost:5173/oauth/kakao"
+
+    window.location.href =
+      `https://kauth.kakao.com/oauth/authorize?client_id=${REST_API_KEY}&redirect_uri=${REDIRECT_URI}&response_type=code`
+  }
+
   return (
     <Wrapper>
       <Divider>
         <Line />
-          <SnsText>SNS 계정으로 로그인</SnsText>
+        <SnsText>SNS 계정으로 로그인</SnsText>
         <Line />
       </Divider>
+
       <BtnWrapper>
-        <IconButton><img src={googleIcon} width="44" /></IconButton>
-        <IconButton><img src={kakaoIcon} width="44" /></IconButton>
+        <IconButton type="button" onClick={handleGoogleLogin}>
+          <IconImg src={googleIcon} alt="구글 로그인" />
+        </IconButton>
+
+        <IconButton type="button" onClick={handleKakaoLogin}>
+          <IconImg src={kakaoIcon} alt="카카오 로그인" />
+        </IconButton>
       </BtnWrapper>
     </Wrapper>
   )

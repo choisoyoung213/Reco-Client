@@ -19,6 +19,7 @@ import Search from "../pages/Search.jsx";
 import Loading from "../pages/Loading.jsx";
 import Activity from "../pages/Activity.jsx";
 import MapPage from "../pages/MapPage.jsx";
+import OAuthCallback from "../pages/OAuthCallback"
 
 // import SignUp from "../pages/SignUp.jsx";
 // import Login from "../pages/Login.jsx";
@@ -52,6 +53,7 @@ const router = createBrowserRouter([
   { path: "/loading", element: <Loading /> },
   { path: "/activity", element: <Activity /> },
   {path: "/location", element: <MapPage /> },
+  { path: "/oauth/:provider", element: <OAuthCallback /> }
 ]);
 
 export default router;
