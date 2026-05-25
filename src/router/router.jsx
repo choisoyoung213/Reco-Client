@@ -28,6 +28,7 @@ import MapPage from "../pages/MapPage.jsx";
 import ScanPage from "../pages/ScanPage.jsx";
 import ResultPage from "../pages/ResultPage.jsx";
 import ChatBot from "../pages/ChatBot.jsx";
+import OAuthCallback from "../pages/OAuthCallback.jsx";
 
 const router = createBrowserRouter([
   { path: "/", element: <Home /> },
@@ -52,6 +53,7 @@ const router = createBrowserRouter([
   { path: "/loading", element: <Loading /> },
   { path: "/activity", element: <Activity /> },
   {path: "/location", element: <MapPage /> },
+  { path: "/oauth/:provider", element: <OAuthCallback /> }
 ]);
 
 export default router;
