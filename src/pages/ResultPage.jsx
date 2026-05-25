@@ -133,6 +133,7 @@ const ImageFrame = styled.div`
   width: 220px;
   height: 220px;
   border: 3px solid #53B175;
+  transform: scaleX(-1) !important;
   border-radius: 20px;
   overflow: hidden;
 `;
@@ -307,8 +308,8 @@ const BottomNavWrapper = styled.div`
   position: fixed; /* absolute에서 fixed로 변경하여 화면 하단에 고정 */
   bottom: 0;
   left: 50%;
-  transform: translateX(-50%); /* 가로 중앙 정렬 */
-  width: 393px; /* 컨테이너와 동일한 너비 */
+  transform: translateX(-50%);
+  width: 393px;
   z-index: 1000;
   background-color: #fff;
 `;

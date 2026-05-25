@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import styled from "styled-components";
 import { useNavigate } from "react-router-dom";
-import BiumChatImg from "../assets/img/Bium_chat.svg"; 
+import BiumChatImg from "../assets/img/BiumProfile.svg"; 
 import ChatSelectIcon from "../assets/img/Chat_select.svg";
 
 const ChatbotPage = () => {
@@ -143,30 +143,29 @@ const UserMessage = styled.div`
 
 const BiumMessageSection = styled.div`
   display: flex;
-  gap: 12px;
+  gap: 5px;
   align-items: flex-start;
 `;
 
 const BiumProfile = styled.img`
-  width: 60px;
-  height: 60px;
+  width: 50px;
+  height: 50px;
   object-fit: contain;
 `;
 
 const BiumContent = styled.div`
     display: flex;
   flex-direction: column;
-  align-items: flex-start; /* 닉네임 왼쪽 정렬 */
-  gap: 8px; 
+  align-items: flex-start;
+  gap: 2px; 
 `;
 const BiumName = styled.span`
   font-size: 12px;
   font-weight: 800;
   color: #272727;
-  margin-left: 2px; /* 캐릭터와 정렬 맞춤 */
+  margin-left: 2px;
 `;
 
-/* 비움이 답변: 말풍선-시간 순서 */
 const BiumResponse = styled.div`
   display: flex;
   align-items: flex-end;
@@ -175,13 +174,13 @@ const BiumResponse = styled.div`
 
 const MessageBubble = styled.div`
   max-width: 240px;
-  padding: 12px 18px;
+  padding: 12px 10px;
   font-size: 12px;
-  line-height: 1.5;
-  border-radius: ${props => props.user ? "20px 20px 0 20px" : "0 20px 20px 20px"};
-  background-color: ${props => props.user ? "#53B175" : "#fff"};
+  line-height: 1.3;
+  text-align: left;
+  border-radius: ${props => props.user ? "20px 20px 2px 20px" : "2px 20px 20px 20px"};
+  background-color: ${props => props.user ? "#53B175" : "#efefef"};
   color: ${props => props.user ? "#fff" : "#272727"};
-  border: ${props => props.user ? "none" : "1.5px solid #53B175"};
 `;
 
 const TimeStamp = styled.span`
