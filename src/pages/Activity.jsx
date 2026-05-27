@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import styled from "styled-components"
 import { BarChart, Bar, XAxis, YAxis, Cell } from "recharts"
 import BottomNavComponent from "../components/BottomNav"
@@ -233,21 +233,7 @@ const ChartWrapper = styled.div`
   overflow: hidden;
 `
 
-const chartData = [
-  { name: "플라스틱", value: 8 },
-  { name: "유리", value: 4 },
-  { name: "종이", value: 15 },
-  { name: "일반", value: 3 },
-]
-
 const COLORS = ["#53b175", "#3d8f5f", "#2d6e47", "#7bc89a"]
-
-const activityDays = [11, 14, 17, 19]
-
-const todayActivities = [
-  { id: 1, text: "플라스틱 쓰레기", isGreen: true },
-  { id: 2, text: "음식물 쓰레기", isGreen: false },
-]
 
 const monthList = [
   "January",
@@ -298,28 +284,68 @@ const getCalendarDays = (year, month) => {
 }
 
 const getWeekText = (year, month, day) => {
-  const weekList = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"]
+  const weekList = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
   return weekList[new Date(year, month, day).getDay()]
 }
 
 const Activity = () => {
-  const [selectedYear, setSelectedYear] = useState(2026)
-  const [selectedMonth, setSelectedMonth] = useState(1)
-  const [selectedDay, setSelectedDay] = useState(19)
+  const today = new Date()
+
+  const [selectedYear, setSelectedYear] =
+    useState(today.getFullYear())
+
+  const [selectedMonth, setSelectedMonth] =
+    useState(today.getMonth())
+
+  const [selectedDay, setSelectedDay] =
+    useState(today.getDate())
+  const [records, setRecords] = useState([])
+
+  const [statistics, setStatistics] = useState({
+    totalCount: 0,
+    recyclableCount: 0,
+    nonRecyclableCount: 0,
+    categoryCounts: [],
+  })
+
+  const monthParam = `${selectedYear}-${String(selectedMonth + 1).padStart(2, "0")}`
 
   const calendarDays = getCalendarDays(selectedYear, selectedMonth)
   const selectedWeek = getWeekText(selectedYear, selectedMonth, selectedDay)
-  const hasActivity = activityDays.includes(selectedDay)
+
+  const activityDays = records.map((record) =>
+    new Date(record.analyzedAt).getDate()
+  )
+
+  const selectedDateRecords = records.filter((record) => {
+    const recordDate = new Date(record.analyzedAt)
+
+    return (
+      recordDate.getFullYear() === selectedYear &&
+      recordDate.getMonth() === selectedMonth &&
+      recordDate.getDate() === selectedDay
+    )
+  })
+
+  const chartData = statistics.categoryCounts.map((item) => ({
+    name: item.categoryName,
+    value: item.count,
+  }))
+
+  const hasActivity = selectedDateRecords.length > 0
+
+  useEffect(() => {
+    
+  }, [monthParam])
 
   return (
+
     <Container>
       <Header>
         <HeaderTitle>
           소영 님은 자원 순환에{"\n"}
-          <GreenBadge>1</GreenBadge>
-          <GreenBadge>2</GreenBadge>
-          <GreenBadge>3</GreenBadge>
-          {" "}회 참여했어요!
+          <GreenText>{statistics.totalCount}회</GreenText>
+          {" "}참여했어요!
         </HeaderTitle>
       </Header>
 
@@ -332,10 +358,15 @@ const Activity = () => {
               setSelectedDay(1)
             }}
           >
-            <option value={2024}>2024</option>
-            <option value={2025}>2025</option>
-            <option value={2026}>2026</option>
-            <option value={2027}>2027</option>
+            {Array.from({ length: 5 }, (_, index) => {
+              const year = today.getFullYear() - 2 + index
+
+              return (
+                <option key={year} value={year}>
+                  {year}
+                </option>
+              )
+            })}
           </CalendarSelect>
 
           <CalendarSelect
@@ -402,16 +433,18 @@ const Activity = () => {
         {hasActivity && (
           <TodayInfo>
             <TodayWeek>{selectedWeek}</TodayWeek>
-            <TodaySubText>두 개의 분리수거를 완료했어요</TodaySubText>
+            <TodaySubText>
+              {selectedDateRecords.length}개의 분리수거를 완료했어요
+            </TodaySubText>
           </TodayInfo>
         )}
 
         {hasActivity ? (
           <>
-            {todayActivities.map((item) => (
-              <ActivityItem key={item.id} $green={item.isGreen}>
-                <ActivityItemText $green={item.isGreen}>
-                  {item.text}
+            {selectedDateRecords.map((item) => (
+              <ActivityItem key={item.recordId} $green={item.isRecyclable}>
+                <ActivityItemText $green={item.isRecyclable}>
+                  {item.itemName}
                 </ActivityItemText>
               </ActivityItem>
             ))}
@@ -428,8 +461,9 @@ const Activity = () => {
 
       <StatsSection>
         <StatsTitle>
-          소영님 저번달 보다{"\n"}
-          <GreenText>16회</GreenText> 더 많이 분리배출 했어요
+          이번 달 총{"\n"}
+          <GreenText>{statistics.totalCount}회</GreenText>
+          {" "}분리배출 했어요
         </StatsTitle>
 
         <ChartWrapper>
