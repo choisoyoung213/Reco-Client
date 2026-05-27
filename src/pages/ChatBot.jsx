@@ -20,6 +20,7 @@ const ChatbotPage = () => {
         },
     ]);
     const [isLoading, setIsLoading] = useState(false);
+    const [noticeShown, setNoticeShown] = useState(false);
     const chatEndRef = useRef(null);
 
     const scrollToBottom = () => {
@@ -54,17 +55,30 @@ const ChatbotPage = () => {
                     text: m.text,
                 }));
 
-            const replyText = await sendChatToGemini(history);
+            const { reply, source, notice } = await sendChatToGemini(history);
 
-            setMessages((prev) => [
-                ...prev,
-                {
-                    id: Date.now() + 1,
-                    text: replyText,
-                    sender: "bium",
-                    time: nowTime(),
-                },
-            ]);
+            setMessages((prev) => {
+                const next = [
+                    ...prev,
+                    {
+                        id: Date.now() + 1,
+                        text: reply,
+                        sender: "bium",
+                        time: nowTime(),
+                    },
+                ];
+                if (source === "local" && notice && !noticeShown) {
+                    next.push({
+                        id: Date.now() + 2,
+                        text: `[안내] ${notice}`,
+                        sender: "bium",
+                        time: nowTime(),
+                        isNotice: true,
+                    });
+                    setNoticeShown(true);
+                }
+                return next;
+            });
         } catch (err) {
             console.error("[비움이] Gemini 호출 실패:", err);
             const msg = String(err?.message || "");
@@ -104,7 +118,7 @@ const ChatbotPage = () => {
                         <UserMessage key={msg.id}>
                             {/* 사용자일 때는 시간이 왼쪽! */}
                             <TimeStamp>{msg.time}</TimeStamp>
-                            <MessageBubble user>{msg.text}</MessageBubble>
+                            <MessageBubble $user>{msg.text}</MessageBubble>
                         </UserMessage>
                     ) : (
                         <BiumMessageSection key={msg.id}>
@@ -245,9 +259,9 @@ const MessageBubble = styled.div`
   font-size: 12px;
   line-height: 1.3;
   text-align: left;
-  border-radius: ${props => props.user ? "20px 20px 2px 20px" : "2px 20px 20px 20px"};
-  background-color: ${props => props.user ? "#53B175" : "#efefef"};
-  color: ${props => props.user ? "#fff" : "#272727"};
+  border-radius: ${props => props.$user ? "20px 20px 2px 20px" : "2px 20px 20px 20px"};
+  background-color: ${props => props.$user ? "#53B175" : "#efefef"};
+  color: ${props => props.$user ? "#fff" : "#272727"};
 `;
 
 const TimeStamp = styled.span`
