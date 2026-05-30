@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import BiumChatImg from "../assets/img/BiumProfile.svg"; 
 import ChatSelectIcon from "../assets/img/Chat_select.svg";
 import { sendChatToGemini } from "../services/gemini";
+import BackIcon from "../assets/img/Vector.svg";
 
 const nowTime = () =>
     new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
@@ -108,7 +109,7 @@ const ChatbotPage = () => {
     return (
         <Container>
             <Header>
-                <BackBtn onClick={() => navigate(-1)}>&lt;</BackBtn>
+                <BackBtn onClick={() => navigate(-1)}><BackIconImg src={BackIcon} alt="Back" /></BackBtn>
                 <HeaderTitle>비움이</HeaderTitle>
             </Header>
 
@@ -192,9 +193,17 @@ const Header = styled.div`
   border-bottom: 1px solid #F2F2F2;
 `;
 
-const BackBtn = styled.div` 
-    font-size: 24px; 
-    cursor: pointer; 
+const BackBtn = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 4px;
+`;
+
+const BackIconImg = styled.img`
+  width: 12px;
+  height: auto;
 `;
 
 const HeaderTitle = styled.h1`
