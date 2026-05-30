@@ -1,24 +1,63 @@
-import React from "react";
+import React, { useState } from "react";
 import styled from "styled-components";
 import { useLocation, useNavigate } from "react-router-dom";
 import BiumResultImg from "../assets/img/Bium_result.svg";
-import RecoIcon from "../assets/img/RecoIcon.svg"
+import RecoIcon from "../assets/img/RecoIcon.svg";
 import BottomNav from "../components/BottomNav";
-import ChatIcon from "../assets/img/ChatIcon.svg"
+import ChatIcon from "../assets/img/ChatIcon.svg";
+
+// 오염도 이모션 아이콘 로드
+import GoodIcon from "../assets/img/goodIcon.svg";
+import NormalIcon from "../assets/img/normalIcon.svg";
+import BadIcon from "../assets/img/badIcon.svg";
+import BackIcon from "../assets/img/Vector.svg";
 
 const ResultPage = () => {
     const location = useLocation();
     const navigate = useNavigate();
 
+    // 📍 말풍선 설명창 열림/닫힘 상태 관리
+    const [showTooltip, setShowTooltip] = useState(false);
+
+    // 백엔드 연동 전 기본 더미 객체 정의
     const { result, capturedImage } = location.state || {
-        result: { item: "플라스틱 병", confidence: 85 },
+        result: { 
+            item: "플라스틱 병", 
+            confidence: 85,
+            contamination: "good" // 👈 'good', 'normal', 'bad' 중 하나가 들어옴
+        },
         capturedImage: null,
+    };
+
+    // 오염도 상태에 맞춰 아이콘을 선택해주는 함수
+    const getContaminationIcon = (status) => {
+        switch (status) {
+            case "good": return GoodIcon;
+            case "normal": return NormalIcon;
+            case "bad": return BadIcon;
+            default: return GoodIcon;
+        }
+    };
+
+    // 💡 [신규] 오염도 상태에 맞춰 툴팁 텍스트를 반환해주는 함수
+    const getContaminationText = (status) => {
+        switch (status) {
+            case "good": return "오염도 좋음";
+            case "normal": return "오염도 보통";
+            case "bad": return "오염도 나쁨";
+            default: return "오염도 좋음";
+        }
+    };
+
+    // 결과 저장 트리거 핸들러
+    const handleSaveResult = () => {
+        alert("결과가 저장되었습니다!");
     };
 
     return (
         <Container>
             <Header>
-                <BackBtn onClick={() => navigate(-1)}>&lt;</BackBtn>
+                <BackBtn onClick={() => navigate(-1)}><BackIconImg src={BackIcon} alt="Back" /></BackBtn>
                 <Title>{result.item}</Title>
             </Header>
 
@@ -31,18 +70,34 @@ const ResultPage = () => {
 
             <AnalysisCard>
                 <CardTitle>재질 분석</CardTitle>
+                
                 <ChartWrapper>
-                    <DonutChart>
-                        <ChartCenter>
-                            <EcoLabel src={RecoIcon} alt="RecoIcon" />
-                        </ChartCenter>
-                    </DonutChart>
+                    <DonutChartContainer>
+                        <DonutChart>
+                            <ChartCenter>
+                                <EcoLabel src={RecoIcon} alt="RecoIcon" />
+                            </ChartCenter>
+                        </DonutChart>
+                    </DonutChartContainer>
+                    
                     <Legend>
                         <LegendItem><Dot color="#53B175" /> 플라스틱</LegendItem>
                         <LegendItem><Dot color="#1E3A2F" /> 유리</LegendItem>
                         <LegendItem><Dot color="#D3D3D3" /> 기타</LegendItem>
                     </Legend>
                 </ChartWrapper>
+                
+                <EmotionIcon 
+                    src={getContaminationIcon(result.contamination || "good")} 
+                    alt="contamination status" 
+                    onClick={() => setShowTooltip(!showTooltip)}
+                />
+
+                {showTooltip && (
+                    <ContaminationTooltip onClick={() => setShowTooltip(false)}>
+                        {getContaminationText(result.contamination || "good")}
+                    </ContaminationTooltip>
+                )}
             </AnalysisCard>
 
             <GuideCard>
@@ -67,6 +122,11 @@ const ResultPage = () => {
                 </GuideList>
             </GuideCard>
 
+            <ActionButtonGroup>
+                <ActionButton onClick={handleSaveResult}>결과 저장</ActionButton>
+                <ActionButton onClick={() => navigate("/additional-question")}>추가 질문</ActionButton>
+            </ActionButtonGroup>
+
             <ChatbotBtn onClick={() => navigate("/chatbot")}>
                 <ChatIconImg src={ChatIcon} alt="ChatIcon" />
                 <ChatText>
@@ -85,19 +145,20 @@ const ResultPage = () => {
     );
 };
 
+/* ===== Styled Components ===== */
 const Container = styled.div`
   width: 393px;
   margin: 0 auto;
   background-color: #fff;
   padding: 20px;
-  /* 네브바 높이만큼 하단 패딩을 주어 챗봇 버튼이 가려지지 않게 함 */
-  padding-bottom: 120px; 
+  padding-bottom: 140px; 
   display: flex;
   flex-direction: column;
   gap: 20px;
   font-family: 'Pretendard', sans-serif;
   position: relative;
   min-height: 100vh;
+  box-sizing: border-box;
 `;
 
 const Header = styled.div`
@@ -107,8 +168,16 @@ const Header = styled.div`
 `;
 
 const BackBtn = styled.div`
-  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
+  padding: 4px;
+`;
+
+const BackIconImg = styled.img`
+  width: 12px;
+  height: auto;
 `;
 
 const Title = styled.h1`
@@ -133,7 +202,6 @@ const ImageFrame = styled.div`
   width: 220px;
   height: 220px;
   border: 3px solid #53B175;
-  transform: scaleX(-1) !important;
   border-radius: 20px;
   overflow: hidden;
 `;
@@ -142,6 +210,7 @@ const CapturedImage = styled.img`
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transform: scaleX(-1);
 `;
 
 const Character = styled.img`
@@ -152,6 +221,7 @@ const Character = styled.img`
 `;
 
 const AnalysisCard = styled.div`
+  position: relative; 
   border: 1px solid #E0E0E0;
   border-radius: 20px;
   padding: 20px;
@@ -172,11 +242,18 @@ const ChartWrapper = styled.div`
   flex-direction: column;
   align-items: center; 
   gap: 20px;
+  width: 100%;
+`;
+
+const DonutChartContainer = styled.div`
+  position: relative;
+  width: 150px;
+  height: 150px;
 `;
 
 const DonutChart = styled.div`
-  width: 150px;
-  height: 150px;
+  width: 100%;
+  height: 100%;
   border-radius: 50%;
   background: conic-gradient(#53B175 0% 75%, #1E3A2F 75% 85%, #D3D3D3 85% 100%);
   display: flex;
@@ -198,12 +275,57 @@ const EcoLabel = styled.img`
     position: absolute;
 `;
 
+const EmotionIcon = styled.img`
+  position: absolute;
+  left: 20px;
+  bottom: 16px;
+  width: 38px;
+  height: 38px;
+  z-index: 10;
+  cursor: pointer;
+  
+  transition: transform 0.1s ease;
+  &:active {
+    transform: scale(0.95); /* 누를 때 들어가는 효과 */
+  }
+`;
+
+const ContaminationTooltip = styled.div`
+  position: absolute;
+  left: 65px;    
+  bottom: 18px;  
+  
+  background-color: #e1e1e1;
+  color: #6b6b6b;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 8px;
+  box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.15);
+  z-index: 20;
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: 'Paperlogy-5Medium', sans-serif;
+
+  &::after {
+    content: "";
+    position: absolute;
+    left: -6px;
+    top: 50%;
+    transform: translateY(-50%);
+    border-width: 4px 6px 4px 0;
+    border-style: solid;
+    border-color: transparent #e1e1e1 transparent transparent;
+  }
+`;
+
 const Legend = styled.div`
   display: flex;
   flex-direction: row;
   justify-content: right;
   gap: 15px;
   width: 100%;
+  padding-bottom: 5px;
 `;
 
 const LegendItem = styled.div`
@@ -259,15 +381,40 @@ const GuideItem = styled.div`
   }
 `;
 
+const ActionButtonGroup = styled.div`
+  display: flex;
+  flex-direction: row;
+  gap: 14px;
+  width: 100%;
+`;
+
+const ActionButton = styled.div`
+  flex: 1;
+  background-color: #EAEAEA;
+  color: #333333;
+  font-size: 16px;
+  font-weight: 700;
+  padding: 16px 0;
+  border-radius: 16px;
+  text-align: center;
+  cursor: pointer;
+  font-family: 'Paperlogy-6SemiBold', sans-serif;
+  transition: background 0.2s ease;
+
+  &:active {
+    background-color: #dcdcdc;
+  }
+`;
+
 const ChatbotBtn = styled.div`
   background-color: #53B175;
   color: #fff;
   padding: 15px 25px;
   border-radius: 20px;
   display: flex;
-  align-items: center; /* 아이콘과 텍스트 뭉치를 세로 중앙 정렬 */
-  justify-content: flex-start; /* 왼쪽부터 정렬 */
-  gap: 15px; /* 아이콘과 텍스트 사이 간격 */
+  align-items: center; 
+  justify-content: flex-start;
+  gap: 15px;
   cursor: pointer;
   width: 100%;
   box-sizing: border-box;
@@ -281,9 +428,9 @@ const ChatIconImg = styled.img`
 const ChatText = styled.div`
   display: flex;
   flex-direction: column; 
-  align-items: flex-start; /* 왼쪽 정렬 */
-  gap: 4px; /* 위아래 문구 사이 간격 */
-    font-family: 'Paperlogy-6SemiBold', sans-serif;
+  align-items: flex-start;
+  gap: 4px;
+  font-family: 'Paperlogy-6SemiBold', sans-serif;
 
   .top-msg {
     font-size: 12px;
@@ -292,7 +439,7 @@ const ChatText = styled.div`
 
   .bottom-msg {
     font-size: 16px;
-    font-weight: 800; /* 두껍게 */
+    font-weight: 800;
     display: flex;
     align-items: center;
     margin-top: -10px;
@@ -305,7 +452,7 @@ const ChatText = styled.div`
 `;
 
 const BottomNavWrapper = styled.div`
-  position: fixed; /* absolute에서 fixed로 변경하여 화면 하단에 고정 */
+  position: fixed;
   bottom: 0;
   left: 50%;
   transform: translateX(-50%);
