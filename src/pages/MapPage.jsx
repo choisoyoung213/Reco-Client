@@ -111,7 +111,7 @@ const BottomSheet = styled.div`
   height: ${({ $height }) => $height}px;
   background: #fff;
   border-radius: 24px 24px 0 0;
-  padding: 14px 24px 16px;
+  padding: 14px 14px 16px;
   z-index: 10;
   overflow-y: auto;
   transition: none;
@@ -146,7 +146,7 @@ const PlaceCard = styled.div`
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 14px;
+  padding: 14px 10px;
   border: 1px solid #eeeeee;
   border-radius: 18px;
   margin-bottom: 14px;
@@ -155,8 +155,8 @@ const PlaceCard = styled.div`
 `
 
 const Thumbnail = styled.div`
-  width: 86px;
-  height: 86px;
+  width: 70px;
+  height: 70px;
   border-radius: 10px;
   background: #d9d9d9;
   flex-shrink: 0;
@@ -164,6 +164,9 @@ const Thumbnail = styled.div`
 
 const PlaceInfo = styled.div`
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0px;
 `
 
 const PlaceName = styled.p`
@@ -171,14 +174,15 @@ const PlaceName = styled.p`
   font-size: 15px;
   font-weight: 700;
   color: #272727;
-  margin-bottom: 8px;
 `
 
 const PlaceDesc = styled.p`
-  font-family: 'Paperlogy';
+   font-family: 'Paperlogy';
   font-size: 11px;
   color: #959595;
-  line-height: 1.5;
+  line-height: 1.5; 
+  white-space: nowrap;
+  text-align: left;
 `
 
 const Distance = styled.span`
@@ -193,13 +197,13 @@ const BookmarkButton = styled.button`
   font-size: 24px;
   cursor: pointer;
   padding: 4px;
+  flex-shrink: 0;
 `
-
 const FloatingCard = styled.div`
   position: absolute;
-  left: 24px;
-  right: 24px;
-  bottom: 112px;
+  left: 12px;   /* 24px → 12px */
+  right: 12px;  /* 24px → 12px */
+  bottom: 140px;
   z-index: 10;
   background: #fff;
   border-radius: 18px;
@@ -367,6 +371,8 @@ const MapPage = () => {
     )
   }
 
+
+
   const toggleBookmark = (place) => {
     const isAlreadyBookmarked = bookmarks.some((item) => item.id === place.id)
 
@@ -446,7 +452,7 @@ const MapPage = () => {
     }
     const script = document.createElement("script")
     script.src =
-      `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${kakaoMapKey}&autoload=false&libraries=services`    
+      `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${kakaoMapKey}&autoload=false&libraries=services`
     script.async = true
     script.onload = loadMap
     document.head.appendChild(script)
@@ -602,13 +608,12 @@ const MapPage = () => {
                       <>
                         지금 내가 있는 곳에서{" "}
                         <Distance>{place.distance}</Distance> 떨어진 곳에 있어요
-                        <br />
                       </>
                     )}
+                    <br />
                     {place.address || "주소 정보가 없습니다."}
                   </PlaceDesc>
                 </PlaceInfo>
-
                 <BookmarkButton
                   type="button"
                   onClick={(e) => {
@@ -655,7 +660,6 @@ const MapPage = () => {
                   {selectedPlace.address || "주소 정보가 없습니다."}
                 </PlaceDesc>
               </PlaceInfo>
-
               <BookmarkButton
                 type="button"
                 onClick={(e) => {

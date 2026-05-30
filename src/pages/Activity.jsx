@@ -3,6 +3,8 @@ import styled from "styled-components"
 import { BarChart, Bar, XAxis, YAxis, Cell } from "recharts"
 import BottomNavComponent from "../components/BottomNav"
 import BiumAct from "../assets/img/Bium_act.svg"
+import ChevronDown from "../assets/img/down.svg"
+import ChevronUp from "../assets/img/up.svg"
 
 const Container = styled.div`
   display: flex;
@@ -232,6 +234,16 @@ const ChartWrapper = styled.div`
   justify-content: center;
   overflow: hidden;
 `
+const ToggleButton = styled.button`
+  width: 100%;
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: #b8b8b8;
+  cursor: pointer;
+  padding: 8px 0;
+  text-align: center;
+`
 
 const COLORS = ["#53b175", "#3d8f5f", "#2d6e47", "#7bc89a"]
 
@@ -289,6 +301,7 @@ const getWeekText = (year, month, day) => {
 }
 
 const Activity = () => {
+  const [isExpanded, setIsExpanded] = useState(false)
   const today = new Date()
 
   const [selectedYear, setSelectedYear] =
@@ -334,8 +347,9 @@ const Activity = () => {
 
   const hasActivity = selectedDateRecords.length > 0
 
+
   useEffect(() => {
-    
+
   }, [monthParam])
 
   return (
@@ -405,6 +419,7 @@ const Activity = () => {
                   onClick={() => {
                     if (date.isCurrentMonth) {
                       setSelectedDay(date.day)
+                      setIsExpanded(false)
                     }
                   }}
                 >
@@ -441,13 +456,19 @@ const Activity = () => {
 
         {hasActivity ? (
           <>
-            {selectedDateRecords.map((item) => (
+            {(isExpanded ? selectedDateRecords : selectedDateRecords.slice(0, 2)).map((item) => (
               <ActivityItem key={item.recordId} $green={item.isRecyclable}>
                 <ActivityItemText $green={item.isRecyclable}>
                   {item.itemName}
                 </ActivityItemText>
               </ActivityItem>
             ))}
+
+            {selectedDateRecords.length > 2 && (
+              <ToggleButton onClick={() => setIsExpanded(!isExpanded)}>
+                <img src={isExpanded ? ChevronUp : ChevronDown} width={24} height={24} />
+              </ToggleButton>
+            )}
           </>
         ) : (
           <EmptyBox>
