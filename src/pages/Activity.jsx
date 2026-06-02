@@ -38,8 +38,7 @@ const GreenBadge = styled.span`
   background: #53b175;
   color: white;
   border-radius: 4px;
-  width: 22px;
-  height: 24px;
+  padding:2px 6px;
   font-size: 18px;
   font-weight: 700;
   margin-right: 2px;
@@ -301,6 +300,7 @@ const getWeekText = (year, month, day) => {
 }
 
 const Activity = () => {
+  const [userName, setUserName] = useState("사용자")
   const [isExpanded, setIsExpanded] = useState(false)
   const today = new Date()
 
@@ -357,9 +357,11 @@ const Activity = () => {
     <Container>
       <Header>
         <HeaderTitle>
-          소영 님은 자원 순환에{"\n"}
-          <GreenText>{statistics.totalCount}회</GreenText>
-          {" "}참여했어요!
+          {userName} 님은 자원 순환에{"\n"}
+          {String(statistics.totalCount).split("").map((digit, index) => (
+            <GreenBadge key={index}>{digit}</GreenBadge>
+          ))}
+          {" "}회 참여했어요!
         </HeaderTitle>
       </Header>
 

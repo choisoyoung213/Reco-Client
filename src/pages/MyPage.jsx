@@ -3,6 +3,7 @@ import styled from "styled-components"
 import { useNavigate } from "react-router-dom"
 import profileImg from "../assets/img/profile.jpg"
 import BottomNavComponent from "../components/BottomNav"
+import EditIcon from "../assets/img/edit.svg"
 
 const Container = styled.div`
   display: flex;
@@ -46,6 +47,36 @@ const UserName = styled.p`
   font-weight: 600;
   color: #272727;
   margin-bottom: 12px;
+`
+const UserNameRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+`
+const UserNameInput = styled.input`
+  width: 120px;
+  border: none;
+  border-bottom: 1px solid #53b175;
+  outline: none;
+  text-align: center;
+  font-family: 'Paperlogy';
+  font-size: 20px;
+  font-weight: 600;
+  color: #272727;
+`
+const EditButton = styled.button`
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #53B175;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 12px;
+  color: white;
 `
 
 const LogoutButton = styled.button`
@@ -110,13 +141,21 @@ const ToggleCircle = styled.div`
 const MyPage = () => {
   const navigate = useNavigate()
 
-  const [userName] = useState("사용자 명")
+  const [userName, setUserName] = useState("사용자 명")
+  const [editName, setEditName] = useState("사용자 명")
+  const [isEditing, setIsEditing] = useState(false)
   const [autoSave, setAutoSave] = useState(true)
   const [autoEmail, setAutoEmail] = useState(false)
 
   useEffect(() => {
     const savedAutoSave = localStorage.getItem("autoSave")
     const savedAutoEmail = localStorage.getItem("autoEmail")
+    const savedUserName = localStorage.getItem("userName")
+
+    if (savedUserName) {
+      setUserName(savedUserName)
+      setEditName(savedUserName)
+    }
 
     if (savedAutoSave !== null) {
       setAutoSave(savedAutoSave === "true")
@@ -140,7 +179,21 @@ const MyPage = () => {
       return !prev
     })
   }
+  const handleEditName = () => {
+    if (!isEditing) {
+      setIsEditing(true)
+      return
+    }
 
+    if (!editName.trim()) {
+      alert("이름을 입력해주세요.")
+      return
+    }
+
+    setUserName(editName)
+    localStorage.setItem("userName", editName)
+    setIsEditing(false)
+  }
   const handleLogout = () => {
     localStorage.removeItem("accessToken")
     localStorage.removeItem("refreshToken")
@@ -153,7 +206,26 @@ const MyPage = () => {
 
       <ProfileSection>
         <ProfileImage src={profileImg} alt="프로필" />
-        <UserName>{userName}</UserName>
+        <UserNameRow>
+          {isEditing ? (
+            <UserNameInput
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  handleEditName()
+                }
+              }}
+              autoFocus
+            />
+          ) : (
+            <UserName style={{ marginBottom: 0 }}>{userName}</UserName>
+          )}
+
+          <EditButton onClick={handleEditName}>
+            {isEditing ? "✓" : <img src={EditIcon} width={14} height={14} />}
+          </EditButton>
+        </UserNameRow>
         <LogoutButton onClick={handleLogout}>로그아웃</LogoutButton>
       </ProfileSection>
 
