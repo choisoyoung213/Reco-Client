@@ -40,8 +40,7 @@ const GreenBadge = styled.span`
   background: #53b175;
   color: white;
   border-radius: 4px;
-  width: 22px;
-  height: 24px;
+  padding:2px 6px;
   font-size: 18px;
   font-weight: 700;
   margin-right: 2px;
@@ -305,8 +304,8 @@ const getWeekText = (year, month, day) => {
 
 const Activity = () => {
   const navigate = useNavigate();
-  const [isExpanded, setIsExpanded] = useState(false);
   const [userName, setUserName] = useState("사용자");
+  const [isExpanded, setIsExpanded] = useState(false);
   const today = new Date();
 
   const [selectedYear, setSelectedYear] = useState(today.getFullYear());

@@ -108,6 +108,17 @@ const SnsLogin = () => {
     }
   };
 
+  const handleKakaoLogin = () => {
+  try {
+    const REST_API_KEY = getRequiredEnv("VITE_KAKAO_REST_API_KEY");
+    const REDIRECT_URI = getRequiredEnv("VITE_KAKAO_REDIRECT_URI");
+
+    window.location.href = `https://kauth.kakao.com/oauth/authorize?client_id=${REST_API_KEY}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=code`;
+  } catch (error) {
+    alert(error.message);
+  }
+};
+
   return (
     <Wrapper>
       <Divider>
