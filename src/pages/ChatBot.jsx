@@ -156,12 +156,17 @@ const ChatbotPage = () => {
     try {
       const history = nextMessages
         .filter((m) => m.sender === "user" || m.sender === "bium")
+        .slice(-20)
         .map((m) => ({
           role: m.sender === "user" ? "user" : "model",
           text: m.text,
         }));
 
       const { reply, source, notice } = await sendChatToGemini(history);
+      console.log("SOURCE =", source);
+      console.log("REPLY =", reply);
+      console.log("NOTICE =", notice);
+      console.log("HISTORY =", history);
 
       try {
         await fetch(`${SPRING_API_BASE}/api/chatbot/messages/bot`, {
@@ -209,11 +214,16 @@ const ChatbotPage = () => {
 
       if (msg.includes("denied") || msg.includes("403")) {
         friendly =
-          "분리수거 도우미 연결에 문제가 생겼어요. (Gemini API 키 접근 권한이 차단된 상태예요. 관리자에게 키 교체를 요청해 주세요.)";
+          "분리수거 도우미 연결에 문제가 생겼어요. Gemini API 키 접근 권한이 차단된 상태예요.";
       } else if (msg.includes("429") || msg.toLowerCase().includes("quota")) {
-        friendly = "오늘 사용량이 너무 많아 잠시 쉬는 중이에요. 잠시 후 다시 시도해 주세요.";
-      } else if (msg.includes("Failed to fetch") || msg.includes("NetworkError")) {
-        friendly = "서버에 연결할 수 없어요. Reco 서버가 켜져 있는지 확인해 주세요.";
+        friendly =
+          "오늘 사용량이 너무 많아 잠시 쉬는 중이에요. 잠시 후 다시 시도해 주세요.";
+      } else if (
+        msg.includes("Failed to fetch") ||
+        msg.includes("NetworkError")
+      ) {
+        friendly =
+          "서버에 연결할 수 없어요. Reco 서버가 켜져 있는지 확인해 주세요.";
       }
 
       setMessages((prev) => [
@@ -229,7 +239,6 @@ const ChatbotPage = () => {
       setIsLoading(false);
     }
   };
-
   return (
     <Container>
       <Header>
@@ -295,6 +304,7 @@ const ChatbotPage = () => {
             }}
             disabled={isLoading}
           />
+
           <SendBtn
             src={ChatSelectIcon}
             alt="전송"
