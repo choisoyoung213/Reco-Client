@@ -208,7 +208,7 @@ const MyPage = () => {
 
   return (
     <Container>
-      <Header>마이페이지</Header>
+      <Header>Profile</Header>
 
       <ProfileSection>
         <ProfileImage src={profileImg} alt="프로필" />

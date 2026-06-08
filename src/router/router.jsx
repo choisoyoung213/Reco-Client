@@ -29,6 +29,7 @@ import ScanPage from "../pages/ScanPage.jsx";
 import ResultPage from "../pages/ResultPage.jsx";
 import ChatBot from "../pages/ChatBot.jsx";
 import OAuthCallback from "../pages/OAuthCallback.jsx";
+import ReportLocation from "../pages/ReportLocation.jsx"
 
 const router = createBrowserRouter([
   { path: "/", element: <Home /> },
@@ -39,7 +40,8 @@ const router = createBrowserRouter([
   { path: "/food", element: <FoodDetail /> },
   { path: "/can", element: <CanDetail /> },
   { path: "/trash", element: <TrashDetail /> },
-  
+  { path: "/report-location", element: <ReportLocation /> },
+
   // { path:"/signup", element: <SignUp/> },
   // { path:"/login", element: <Login/> },
 

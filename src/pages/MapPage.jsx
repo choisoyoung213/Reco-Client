@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import BottomNavComponent from "../components/BottomNav";
 import SearchIcon from "../assets/img/search.svg";
@@ -262,6 +263,17 @@ const MiniHandle = styled.div`
   border-radius: 10px;
   background: #d9d9d9;
 `;
+const ReportButton = styled.button`
+  margin-top: 12px;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 12px;
+  background: #53B175;
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+`;
 const DEFAULT_POSITION = {
   latitude: 37.4604,
   longitude: 126.9188,
@@ -387,6 +399,7 @@ const getCategoryImage = (category) => {
 };
 
 const MapPage = () => {
+  const navigate = useNavigate();
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const markerListRef = useRef([]);
@@ -892,6 +905,7 @@ const MapPage = () => {
               </PlaceCard>
             ))
           ) : (
+            <>
             <EmptyText>
               {activeCategory === "북마크"
                 ? "북마크한 장소가 없어요"
@@ -899,6 +913,14 @@ const MapPage = () => {
                   ? `현재 위치한 ${currentDistrict}에는 정보를 제공하지 않습니다.`
                   : "가까운 분리배출 장소를 불러오는 중이에요"}
             </EmptyText>
+            {currentDistrict && activeCategory !== "북마크" && (
+            <ReportButton
+              onClick={() => navigate("/report-location")}
+            >
+              위치 제보하기
+            </ReportButton>
+            )}
+            </>
           )}
         </BottomSheet>
       ) : (
