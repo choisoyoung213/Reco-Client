@@ -295,31 +295,6 @@ const DEFAULT_POSITION = {
   latitude: 37.4604,
   longitude: 126.9188,
 };
-const USE_DUMMY_PLACES = true;
-const DUMMY_DISTRICT = "관악구";
-const DUMMY_PLACES = [
-  {
-    id: "dummy-recycle-1",
-    name: "관악구청 분리수거함",
-    address: "서울 관악구 관악로 145",
-    latitude: 37.4782,
-    longitude: 126.9515,
-  },
-  {
-    id: "dummy-recycle-2",
-    name: "서울대입구역 분리수거함",
-    address: "서울 관악구 남부순환로 1822",
-    latitude: 37.4812,
-    longitude: 126.9527,
-  },
-  {
-    id: "dummy-recycle-3",
-    name: "봉천동 주민센터 분리수거함",
-    address: "서울 관악구 봉천로 279",
-    latitude: 37.4841,
-    longitude: 126.9447,
-  },
-];
 
 const getPlaceLatitude = (place) =>
   Number(place.latitude ?? place.lat ?? place.y);
@@ -638,14 +613,37 @@ const MapPage = () => {
       setPlaces(sortedPlaces);
       setSelectedPlace(null);
       setSelectedPlaceId(null);
-      addPlaceMarkers(sortedPlaces, null);
 
       if (sortedPlaces.length === 0) {
         clearMarkers();
+        return;
       }
+
+      addPlaceMarkers(sortedPlaces, null);
     } catch (error) {
       console.error("장소 조회 실패:", error);
     }
+  };
+
+  const fetchBookmarkedPlaces = async (latitude, longitude) => {
+    const district = await getCurrentDistrict(latitude, longitude);
+    const districtBookmarks = await getPlacesInDistrict(bookmarks, district);
+    const sortedBookmarks = getPlacesByDistance(districtBookmarks, {
+      latitude,
+      longitude,
+    });
+
+    setCurrentDistrict(district);
+    setPlaces(sortedBookmarks);
+    setSelectedPlace(null);
+    setSelectedPlaceId(null);
+
+    if (sortedBookmarks.length === 0) {
+      clearMarkers();
+      return;
+    }
+
+    addPlaceMarkers(sortedBookmarks, null);
   };
 
   const moveToCurrentLocation = () => {
@@ -668,6 +666,11 @@ const MapPage = () => {
         setTimeout(() => {
           mapInstanceRef.current.setLevel(4);
         }, 300);
+
+        if (activeCategory === "북마크") {
+          fetchBookmarkedPlaces(nextPosition.latitude, nextPosition.longitude);
+          return;
+        }
 
         fetchPlaces(nextPosition.latitude, nextPosition.longitude);
       },
@@ -777,19 +780,10 @@ const MapPage = () => {
     setActiveCategory(category);
 
     if (category === "북마크") {
-      const districtBookmarks = await getPlacesInDistrict(
-        bookmarks,
-        currentDistrict,
+      await fetchBookmarkedPlaces(
+        currentPosition.latitude,
+        currentPosition.longitude,
       );
-      const sortedBookmarks = getPlacesByDistance(
-        districtBookmarks,
-        currentPosition,
-      );
-
-      setPlaces(sortedBookmarks);
-      setSelectedPlace(null);
-      setSelectedPlaceId(null);
-      addPlaceMarkers(sortedBookmarks, null);
       return;
     }
 

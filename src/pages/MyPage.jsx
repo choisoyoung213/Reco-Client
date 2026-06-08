@@ -116,12 +116,18 @@ const SettingText = styled.p`
   color: #272727;
 `
 
+const SettingValue = styled.span`
+  font-family: 'Paperlogy';
+  font-size: 13px;
+  color: #959595;
+`
+
 const Toggle = styled.button`
   width: 44px;
   height: 24px;
   border-radius: 12px;
   border: none;
-  background: ${({ isOn }) => (isOn ? "#53B175" : "#D9D9D9")};
+  background: ${({ $isOn }) => ($isOn ? "#53B175" : "#D9D9D9")};
   position: relative;
   cursor: pointer;
   transition: background 0.2s;
@@ -134,8 +140,70 @@ const ToggleCircle = styled.div`
   background: white;
   position: absolute;
   top: 2px;
-  left: ${({ isOn }) => (isOn ? "22px" : "2px")};
+  left: ${({ $isOn }) => ($isOn ? "22px" : "2px")};
   transition: left 0.2s;
+`
+
+const ModalOverlay = styled.div`
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+`
+
+const ContactModal = styled.div`
+  width: calc(100% - 48px);
+  max-width: 360px;
+  background: #fff;
+  border-radius: 16px;
+  padding: 20px;
+`
+
+const ModalTitle = styled.p`
+  font-family: 'Paperlogy';
+  font-size: 17px;
+  font-weight: 700;
+  color: #272727;
+  margin-bottom: 12px;
+`
+
+const ContactInput = styled.textarea`
+  width: 100%;
+  height: 120px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid #e0e0e0;
+  resize: none;
+  box-sizing: border-box;
+  font-family: 'Paperlogy';
+  font-size: 14px;
+  outline: none;
+
+  &:focus {
+    border-color: #53B175;
+  }
+`
+
+const ModalButtonRow = styled.div`
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+`
+
+const ModalButton = styled.button`
+  flex: 1;
+  height: 44px;
+  border-radius: 10px;
+  border: none;
+  background: ${({ $primary }) => ($primary ? "#53B175" : "#eeeeee")};
+  color: ${({ $primary }) => ($primary ? "#fff" : "#272727")};
+  font-family: 'Paperlogy';
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
 `
 
 const MyPage = () => {
@@ -145,28 +213,27 @@ const MyPage = () => {
   const [editName, setEditName] = useState("사용자 명")
   const [isEditing, setIsEditing] = useState(false)
   const [autoSave, setAutoSave] = useState(true)
-  const [autoEmail, setAutoEmail] = useState(false)
+  const [locationAllowed, setLocationAllowed] = useState(false)
+  const [isContactOpen, setIsContactOpen] = useState(false)
+  const [contactContent, setContactContent] = useState("")
 
   useEffect(() => {
     const savedUsername = localStorage.getItem("username")
     const savedUserId = localStorage.getItem("userId")
     const savedAutoSave = localStorage.getItem("autoSave")
-    const savedAutoEmail = localStorage.getItem("autoEmail")
+    const savedLocationAllowed = localStorage.getItem("locationAllowed")
     const savedUserName = localStorage.getItem("userName")
+    const nextUserName = savedUserName || savedUsername || savedUserId || "사용자 명"
 
-    if (savedUserName) {
-      setUserName(savedUserName)
-      setEditName(savedUserName)
-    }
-
-    setUserName(savedUsername || savedUserId || "사용자 명")
+    setUserName(nextUserName)
+    setEditName(nextUserName)
 
     if (savedAutoSave !== null) {
       setAutoSave(savedAutoSave === "true")
     }
 
-    if (savedAutoEmail !== null) {
-      setAutoEmail(savedAutoEmail === "true")
+    if (savedLocationAllowed !== null) {
+      setLocationAllowed(savedLocationAllowed === "true")
     }
   }, [])
 
@@ -177,12 +244,75 @@ const MyPage = () => {
     })
   }
 
-  const handleAutoEmail = () => {
-    setAutoEmail((prev) => {
-      localStorage.setItem("autoEmail", !prev)
-      return !prev
-    })
+  const handleLocationPermission = () => {
+    if (locationAllowed) {
+      setLocationAllowed(false)
+      localStorage.setItem("locationAllowed", "false")
+      localStorage.removeItem("lastLatitude")
+      localStorage.removeItem("lastLongitude")
+      return
+    }
+
+    if (!navigator.geolocation) {
+      alert("위치 정보를 지원하지 않는 브라우저입니다.")
+      return
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setLocationAllowed(true)
+        localStorage.setItem("locationAllowed", "true")
+        localStorage.setItem("lastLatitude", String(position.coords.latitude))
+        localStorage.setItem("lastLongitude", String(position.coords.longitude))
+      },
+      () => {
+        setLocationAllowed(false)
+        localStorage.setItem("locationAllowed", "false")
+        alert("위치 정보 권한이 필요합니다.")
+      },
+    )
   }
+
+  const handleContact = () => {
+    setIsContactOpen(true)
+  }
+
+  const handleSubmitContact = async () => {
+    if (!contactContent.trim()) {
+      alert("문의 내용을 입력해주세요.")
+      return
+    }
+
+    try {
+      const userId = localStorage.getItem("userId")
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SPRING_API_BASE_URL}/api/inquiries`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            userId,
+            content: contactContent,
+          }),
+        },
+      )
+
+      if (!response.ok) {
+        throw new Error("문의 등록 실패")
+      }
+
+      alert("문의가 접수되었습니다.")
+      setContactContent("")
+      setIsContactOpen(false)
+    } catch (error) {
+      console.error("문의 등록 실패:", error)
+      alert("문의 접수에 실패했습니다.")
+    }
+  }
+
   const handleEditName = () => {
     if (!isEditing) {
       setIsEditing(true)
@@ -203,6 +333,7 @@ const MyPage = () => {
     localStorage.removeItem("refreshToken")
     localStorage.removeItem("userId")
     localStorage.removeItem("username")
+    localStorage.removeItem("userName")
     navigate("/login")
   }
 
@@ -237,23 +368,57 @@ const MyPage = () => {
 
       <SettingSection>
         <SettingRow>
-          <SettingText>자동 결과 저장</SettingText>
-          <Toggle type="button" isOn={autoSave} onClick={handleAutoSave}>
-            <ToggleCircle isOn={autoSave} />
+          <SettingText>자동 저장 모드</SettingText>
+          <Toggle type="button" $isOn={autoSave} onClick={handleAutoSave}>
+            <ToggleCircle $isOn={autoSave} />
           </Toggle>
         </SettingRow>
 
         <SettingRow>
-          <SettingText>이메일 자동 전송 on/off</SettingText>
-          <Toggle type="button" isOn={autoEmail} onClick={handleAutoEmail}>
-            <ToggleCircle isOn={autoEmail} />
+          <SettingText>위치 정보 허용</SettingText>
+          <Toggle type="button" $isOn={locationAllowed} onClick={handleLocationPermission}>
+            <ToggleCircle $isOn={locationAllowed} />
           </Toggle>
         </SettingRow>
 
-        <SettingRow noBorder clickable onClick={() => alert("문의 기능 준비중입니다.")}>
+        <SettingRow noBorder clickable onClick={handleContact}>
           <SettingText>문의하기</SettingText>
         </SettingRow>
       </SettingSection>
+
+      {isContactOpen && (
+        <ModalOverlay>
+          <ContactModal>
+            <ModalTitle>문의하기</ModalTitle>
+
+            <ContactInput
+              placeholder="문의 내용을 입력해주세요."
+              value={contactContent}
+              onChange={(e) => setContactContent(e.target.value)}
+            />
+
+            <ModalButtonRow>
+              <ModalButton
+                type="button"
+                onClick={() => {
+                  setIsContactOpen(false)
+                  setContactContent("")
+                }}
+              >
+                취소
+              </ModalButton>
+
+              <ModalButton
+                type="button"
+                $primary
+                onClick={handleSubmitContact}
+              >
+                문의하기
+              </ModalButton>
+            </ModalButtonRow>
+          </ContactModal>
+        </ModalOverlay>
+      )}
 
       <BottomNavComponent />
     </Container>
