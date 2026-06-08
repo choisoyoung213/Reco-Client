@@ -154,7 +154,12 @@ const PlaceCard = styled.div`
   display: flex;
   gap: 14px;
   align-items: flex-start;
+  padding: 10px;
   margin-bottom: 14px;
+  border: 1px solid ${({ $selected }) => ($selected ? "#53b175" : "transparent")};
+  border-radius: 16px;
+  background: ${({ $selected }) => ($selected ? "#f0faf4" : "transparent")};
+  cursor: pointer;
 `;
 
 const Thumbnail = styled.div`
@@ -185,8 +190,8 @@ const PlaceInfo = styled.div`
 const PlaceName = styled.p`
   font-family: "Paperlogy";
   font-size: 15px;
-  font-weight: 700;
-  color: #272727;
+  font-weight: ${({ $selected }) => ($selected ? 800 : 700)};
+  color: ${({ $selected }) => ($selected ? "#53b175" : "#272727")};
   margin: 0;
   text-align: left;
 `;
@@ -205,6 +210,18 @@ const PlaceDesc = styled.p`
 
 const Distance = styled.span`
   color: #53b175;
+  font-weight: 700;
+`;
+
+const SelectedBadge = styled.span`
+  display: inline-flex;
+  margin-top: 6px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #53b175;
+  color: #fff;
+  font-family: "Paperlogy";
+  font-size: 11px;
   font-weight: 700;
 `;
 
@@ -278,6 +295,31 @@ const DEFAULT_POSITION = {
   latitude: 37.4604,
   longitude: 126.9188,
 };
+const USE_DUMMY_PLACES = true;
+const DUMMY_DISTRICT = "관악구";
+const DUMMY_PLACES = [
+  {
+    id: "dummy-recycle-1",
+    name: "관악구청 분리수거함",
+    address: "서울 관악구 관악로 145",
+    latitude: 37.4782,
+    longitude: 126.9515,
+  },
+  {
+    id: "dummy-recycle-2",
+    name: "서울대입구역 분리수거함",
+    address: "서울 관악구 남부순환로 1822",
+    latitude: 37.4812,
+    longitude: 126.9527,
+  },
+  {
+    id: "dummy-recycle-3",
+    name: "봉천동 주민센터 분리수거함",
+    address: "서울 관악구 봉천로 279",
+    latitude: 37.4841,
+    longitude: 126.9447,
+  },
+];
 
 const getPlaceLatitude = (place) =>
   Number(place.latitude ?? place.lat ?? place.y);
@@ -410,6 +452,7 @@ const MapPage = () => {
   const [isOpen, setIsOpen] = useState(true);
   const [places, setPlaces] = useState([]);
   const [selectedPlace, setSelectedPlace] = useState(null);
+  const [selectedPlaceId, setSelectedPlaceId] = useState(null);
   const [bookmarks, setBookmarks] = useState([]);
   const [activeCategory, setActiveCategory] = useState("분리수거함");
   const [currentPosition, setCurrentPosition] = useState(DEFAULT_POSITION);
@@ -422,10 +465,19 @@ const MapPage = () => {
     markerListRef.current.forEach((marker) => marker.setMap(null));
     markerListRef.current = [];
   };
-  const addPlaceMarkers = (placeList) => {
+
+  const getSelectedMarkerImage = () =>
+    new window.kakao.maps.MarkerImage(
+      "data:image/svg+xml;charset=utf-8,%3Csvg%20width%3D%2242%22%20height%3D%2252%22%20viewBox%3D%220%200%2042%2052%22%20fill%3D%22none%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cpath%20d%3D%22M21%2051C21%2051%2039%2032.682%2039%2020.824C39%2010.595%2030.941%202%2021%202C11.059%202%203%2010.595%203%2020.824C3%2032.682%2021%2051%2021%2051Z%22%20fill%3D%22%2353B175%22%20stroke%3D%22white%22%20stroke-width%3D%224%22/%3E%3Ccircle%20cx%3D%2221%22%20cy%3D%2220%22%20r%3D%228%22%20fill%3D%22white%22/%3E%3C/svg%3E",
+      new window.kakao.maps.Size(42, 52),
+      { offset: new window.kakao.maps.Point(21, 52) },
+    );
+
+  const addPlaceMarkers = (placeList, nextSelectedPlaceId = selectedPlaceId) => {
     if (!mapInstanceRef.current || !window.kakao) return;
 
     clearMarkers();
+    const selectedMarkerImage = getSelectedMarkerImage();
 
     placeList.forEach((place) => {
       const markerPosition = new window.kakao.maps.LatLng(
@@ -436,12 +488,13 @@ const MapPage = () => {
       const marker = new window.kakao.maps.Marker({
         map: mapInstanceRef.current,
         position: markerPosition,
+        image: place.id === nextSelectedPlaceId ? selectedMarkerImage : undefined,
       });
 
       markerListRef.current.push(marker);
 
       window.kakao.maps.event.addListener(marker, "click", () => {
-        moveToPlace(place);
+        moveToPlace(place, true);
       });
     });
   };
@@ -583,9 +636,9 @@ const MapPage = () => {
 
       setCurrentDistrict(district);
       setPlaces(sortedPlaces);
-      addPlaceMarkers(sortedPlaces);
-
-      setSelectedPlace(sortedPlaces[0] || null);
+      setSelectedPlace(null);
+      setSelectedPlaceId(null);
+      addPlaceMarkers(sortedPlaces, null);
 
       if (sortedPlaces.length === 0) {
         clearMarkers();
@@ -734,17 +787,20 @@ const MapPage = () => {
       );
 
       setPlaces(sortedBookmarks);
-      addPlaceMarkers(sortedBookmarks);
-      setSelectedPlace(sortedBookmarks[0] || null);
+      setSelectedPlace(null);
+      setSelectedPlaceId(null);
+      addPlaceMarkers(sortedBookmarks, null);
       return;
     }
 
     fetchPlaces(currentPosition.latitude, currentPosition.longitude, category);
   };
 
-  const moveToPlace = (place) => {
+  const moveToPlace = (place, shouldCollapseSheet = false) => {
     setSelectedPlace(place);
-    setIsOpen(false);
+    setSelectedPlaceId(place.id);
+    setIsOpen(!shouldCollapseSheet);
+    addPlaceMarkers(places, place.id);
 
     if (!mapInstanceRef.current || !window.kakao) return;
 
@@ -867,7 +923,11 @@ const MapPage = () => {
 
           {places.length > 0 ? (
             places.slice(0, 3).map((place) => (
-              <PlaceCard key={place.id} onClick={() => moveToPlace(place)}>
+              <PlaceCard
+                key={place.id}
+                $selected={selectedPlaceId === place.id}
+                onClick={() => moveToPlace(place)}
+              >
                 <Thumbnail>
                   <img
                     src={getCategoryImage(activeCategory)}
@@ -876,11 +936,14 @@ const MapPage = () => {
                 </Thumbnail>
 
                 <PlaceInfo>
-                  <PlaceName>
+                  <PlaceName $selected={selectedPlaceId === place.id}>
                     {getPlaceDistrict(place)
                       ? `${getPlaceDistrict(place)} ${activeCategory}`
                       : place.name || activeCategory}
                   </PlaceName>
+                  {selectedPlaceId === place.id && (
+                    <SelectedBadge>현재 선택된 장소</SelectedBadge>
+                  )}
 
                   <PlaceDesc>
                     {place.distance && (

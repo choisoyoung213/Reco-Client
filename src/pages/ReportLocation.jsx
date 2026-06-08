@@ -117,9 +117,7 @@ const SearchResultBox = styled.div`
 
 const SearchResultItem = styled.div`
   padding: 14px 16px;
-  border: 1px solid ${({ $selected }) => $selected ? '#53B175' : 'transparent'};
-  border-bottom-color: #F0F0F0;
-  background: ${({ $selected }) => $selected ? '#F0FAF4' : '#fff'};
+  border-bottom: 1px solid #F0F0F0;
   cursor: pointer;
   text-align: left;
 
@@ -144,16 +142,6 @@ const ResultAddress = styled.div`
   font-size: 12px;
   color: #959595;
   margin-top: 4px;
-`
-
-const SelectedMapBox = styled.div`
-  width: 100%;
-  height: 180px;
-  margin-top: 12px;
-  border: 1px solid #E0E0E0;
-  border-radius: 12px;
-  overflow: hidden;
-  background: #F5F5F5;
 `
 
 const MemoInput = styled.textarea`
@@ -201,22 +189,14 @@ const CATEGORIES = [
 const ReportLocation = () => {
     const navigate = useNavigate()
     const mapRef = useRef(null)
-    const mapInstanceRef = useRef(null)
-    const markerRef = useRef(null)
     const [selectedCategory, setSelectedCategory] = useState(null)
     const [address, setAddress] = useState("")
     const [memo, setMemo] = useState("")
     const [searchedPlace, setSearchedPlace] = useState(null)
     const [searchResults, setSearchResults] = useState([])
-    const [isKakaoReady, setIsKakaoReady] = useState(
-        Boolean(window.kakao?.maps?.services),
-    )
 
     useEffect(() => {
-        if (window.kakao?.maps?.services) {
-            setIsKakaoReady(true)
-            return
-        }
+        if (window.kakao?.maps?.services) return
 
         let kakaoMapKey
 
@@ -231,78 +211,15 @@ const ReportLocation = () => {
             'script[src*="dapi.kakao.com/v2/maps/sdk.js"]',
         )
 
-        if (existingScript) {
-            const checkKakaoLoaded = setInterval(() => {
-                if (window.kakao?.maps) {
-                    clearInterval(checkKakaoLoaded)
-                    window.kakao.maps.load(() => {
-                        setIsKakaoReady(Boolean(window.kakao?.maps?.services))
-                    })
-                }
-            }, 100)
-
-            return () => {
-                clearInterval(checkKakaoLoaded)
-            }
-        }
+        if (existingScript) return
 
         const script = document.createElement("script")
         script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${kakaoMapKey}&autoload=false&libraries=services`
         script.async = true
         script.onload = () => {
-            window.kakao.maps.load(() => {
-                setIsKakaoReady(Boolean(window.kakao?.maps?.services))
-            })
+            window.kakao.maps.load(() => { })
         }
         document.head.appendChild(script)
-    }, [])
-
-    useEffect(() => {
-        if (!searchedPlace || !isKakaoReady || !mapRef.current || !window.kakao?.maps) {
-            return
-        }
-
-        const markerPosition = new window.kakao.maps.LatLng(
-            searchedPlace.latitude,
-            searchedPlace.longitude,
-        )
-
-        if (!mapInstanceRef.current) {
-            mapInstanceRef.current = new window.kakao.maps.Map(mapRef.current, {
-                center: markerPosition,
-                level: 3,
-            })
-        } else {
-            mapInstanceRef.current.setCenter(markerPosition)
-            mapInstanceRef.current.setLevel(3)
-        }
-
-        if (markerRef.current) {
-            markerRef.current.setMap(null)
-        }
-
-        const markerImage = new window.kakao.maps.MarkerImage(
-            "data:image/svg+xml;charset=utf-8,%3Csvg%20width%3D%2238%22%20height%3D%2248%22%20viewBox%3D%220%200%2038%2048%22%20fill%3D%22none%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cpath%20d%3D%22M19%2047C19%2047%2036%2029.7%2036%2018.5C36%208.835%2028.389%201%2019%201C9.611%201%202%208.835%202%2018.5C2%2029.7%2019%2047%2019%2047Z%22%20fill%3D%22%2353B175%22%20stroke%3D%22white%22%20stroke-width%3D%223%22/%3E%3Ccircle%20cx%3D%2219%22%20cy%3D%2218%22%20r%3D%227%22%20fill%3D%22white%22/%3E%3C/svg%3E",
-            new window.kakao.maps.Size(38, 48),
-            { offset: new window.kakao.maps.Point(19, 48) },
-        )
-
-        markerRef.current = new window.kakao.maps.Marker({
-            map: mapInstanceRef.current,
-            position: markerPosition,
-            image: markerImage,
-        })
-
-        setTimeout(() => {
-            mapInstanceRef.current?.relayout()
-            mapInstanceRef.current?.setCenter(markerPosition)
-        }, 0)
-    }, [searchedPlace, isKakaoReady])
-
-    useEffect(() => {
-        return () => {
-            markerRef.current?.setMap(null)
-        }
     }, [])
 
     const handleSearchAddress = () => {
@@ -311,7 +228,7 @@ const ReportLocation = () => {
             return
         }
 
-        if (!isKakaoReady || !window.kakao?.maps?.services) {
+        if (!window.kakao?.maps?.services) {
             alert("\uc9c0\ub3c4 \uac80\uc0c9 \uc11c\ube44\uc2a4\ub97c \ubd88\ub7ec\uc624\uc9c0 \ubabb\ud588\uc2b5\ub2c8\ub2e4.")
             return
         }
@@ -347,7 +264,7 @@ const ReportLocation = () => {
     }
 
     return (
-        <Container>
+        <Container ref={mapRef}>
             <Header>
                 <BackButton onClick={() => navigate(-1)}>{"<"}</BackButton>
                 <Title>{"\uc704\uce58 \uc81c\ubcf4\ud558\uae30"}</Title>
@@ -377,7 +294,6 @@ const ReportLocation = () => {
                         onChange={(e) => {
                             setAddress(e.target.value)
                             setSearchedPlace(null)
-                            setSearchResults([])
                         }}
                         onKeyDown={(e) => {
                             if (e.key === "Enter") handleSearchAddress()
@@ -392,7 +308,6 @@ const ReportLocation = () => {
                         {searchResults.slice(0, 5).map((place) => (
                             <SearchResultItem
                                 key={place.id}
-                                $selected={searchedPlace?.id === place.id}
                                 onClick={() => {
                                     setAddress(
                                         place.road_address_name ||
@@ -401,12 +316,13 @@ const ReportLocation = () => {
                                     )
 
                                     setSearchedPlace({
-                                        id: place.id,
                                         name: place.place_name,
                                         address: place.road_address_name || place.address_name,
                                         latitude: Number(place.y),
                                         longitude: Number(place.x),
                                     })
+
+                                    setSearchResults([])
                                 }}
                             >
                                 <ResultName>{place.place_name}</ResultName>
@@ -417,7 +333,6 @@ const ReportLocation = () => {
                         ))}
                     </SearchResultBox>
                 )}
-                {searchedPlace && <SelectedMapBox ref={mapRef} />}
             </Section>
 
             <Section>
