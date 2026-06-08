@@ -296,6 +296,9 @@ const DEFAULT_POSITION = {
   longitude: 126.9188,
 };
 
+const isLocationAllowed = () =>
+  localStorage.getItem("locationAllowed") === "true";
+
 const getPlaceLatitude = (place) =>
   Number(place.latitude ?? place.lat ?? place.y);
 
@@ -432,6 +435,7 @@ const MapPage = () => {
   const [activeCategory, setActiveCategory] = useState("분리수거함");
   const [currentPosition, setCurrentPosition] = useState(DEFAULT_POSITION);
   const [currentDistrict, setCurrentDistrict] = useState("");
+  const [locationEnabled, setLocationEnabled] = useState(isLocationAllowed());
   const DEFAULT_SHEET_HEIGHT = 250;
   const [sheetHeight, setSheetHeight] = useState(DEFAULT_SHEET_HEIGHT);
   const sheetStartHeight = useRef(DEFAULT_SHEET_HEIGHT);
@@ -439,6 +443,16 @@ const MapPage = () => {
   const clearMarkers = () => {
     markerListRef.current.forEach((marker) => marker.setMap(null));
     markerListRef.current = [];
+  };
+
+  const resetPlacesForLocationOff = () => {
+    setLocationEnabled(false);
+    setCurrentPosition(DEFAULT_POSITION);
+    setCurrentDistrict("");
+    setPlaces([]);
+    setSelectedPlace(null);
+    setSelectedPlaceId(null);
+    clearMarkers();
   };
 
   const getSelectedMarkerImage = () =>
@@ -479,6 +493,32 @@ const MapPage = () => {
       JSON.parse(localStorage.getItem("bookmarkedPlaces")) || [];
 
     setBookmarks(savedBookmarks);
+  }, []);
+
+  useEffect(() => {
+    const handleLocationPermissionChange = () => {
+      const nextLocationEnabled = isLocationAllowed();
+
+      setLocationEnabled(nextLocationEnabled);
+
+      if (!nextLocationEnabled) {
+        resetPlacesForLocationOff();
+      }
+    };
+
+    window.addEventListener(
+      "reco-location-permission-change",
+      handleLocationPermissionChange,
+    );
+    window.addEventListener("storage", handleLocationPermissionChange);
+
+    return () => {
+      window.removeEventListener(
+        "reco-location-permission-change",
+        handleLocationPermissionChange,
+      );
+      window.removeEventListener("storage", handleLocationPermissionChange);
+    };
   }, []);
 
   const getCurrentDistrict = (latitude, longitude) =>
@@ -608,18 +648,19 @@ const MapPage = () => {
         latitude,
         longitude,
       });
+      const topPlaces = sortedPlaces.slice(0, 3);
 
       setCurrentDistrict(district);
-      setPlaces(sortedPlaces);
+      setPlaces(topPlaces);
       setSelectedPlace(null);
       setSelectedPlaceId(null);
 
-      if (sortedPlaces.length === 0) {
+      if (topPlaces.length === 0) {
         clearMarkers();
         return;
       }
 
-      addPlaceMarkers(sortedPlaces, null);
+      addPlaceMarkers(topPlaces, null);
     } catch (error) {
       console.error("장소 조회 실패:", error);
     }
@@ -632,21 +673,30 @@ const MapPage = () => {
       latitude,
       longitude,
     });
+    const topBookmarks = sortedBookmarks.slice(0, 3);
 
     setCurrentDistrict(district);
-    setPlaces(sortedBookmarks);
+    setPlaces(topBookmarks);
     setSelectedPlace(null);
     setSelectedPlaceId(null);
 
-    if (sortedBookmarks.length === 0) {
+    if (topBookmarks.length === 0) {
       clearMarkers();
       return;
     }
 
-    addPlaceMarkers(sortedBookmarks, null);
+    addPlaceMarkers(topBookmarks, null);
   };
 
   const moveToCurrentLocation = () => {
+    if (!isLocationAllowed()) {
+      setLocationEnabled(false);
+      alert("마이페이지에서 위치 정보 허용을 켜주세요.");
+      return;
+    }
+
+    setLocationEnabled(true);
+
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const nextPosition = {
@@ -708,6 +758,34 @@ const MapPage = () => {
 
     const loadMap = () => {
       window.kakao.maps.load(() => {
+        const createMap = (positionData, shouldFetchPlaces = true) => {
+          const center = new window.kakao.maps.LatLng(
+            positionData.latitude,
+            positionData.longitude,
+          );
+
+          const map = new window.kakao.maps.Map(mapRef.current, {
+            center,
+            level: 4,
+          });
+
+          mapInstanceRef.current = map;
+          setCurrentPosition(positionData);
+
+          if (shouldFetchPlaces) {
+            fetchPlaces(positionData.latitude, positionData.longitude);
+          }
+        };
+
+        if (!isLocationAllowed()) {
+          setLocationEnabled(false);
+          createMap(DEFAULT_POSITION, false);
+          resetPlacesForLocationOff();
+          return;
+        }
+
+        setLocationEnabled(true);
+
         navigator.geolocation.getCurrentPosition(
           (position) => {
             const positionData = {
@@ -715,34 +793,10 @@ const MapPage = () => {
               longitude: position.coords.longitude,
             };
 
-            setCurrentPosition(positionData);
-
-            const center = new window.kakao.maps.LatLng(
-              positionData.latitude,
-              positionData.longitude,
-            );
-
-            const map = new window.kakao.maps.Map(mapRef.current, {
-              center,
-              level: 4,
-            });
-
-            mapInstanceRef.current = map;
-            fetchPlaces(positionData.latitude, positionData.longitude);
+            createMap(positionData);
           },
           () => {
-            const center = new window.kakao.maps.LatLng(
-              DEFAULT_POSITION.latitude,
-              DEFAULT_POSITION.longitude,
-            );
-
-            const map = new window.kakao.maps.Map(mapRef.current, {
-              center,
-              level: 4,
-            });
-
-            mapInstanceRef.current = map;
-            fetchPlaces(DEFAULT_POSITION.latitude, DEFAULT_POSITION.longitude);
+            createMap(DEFAULT_POSITION);
           },
         );
       });
@@ -778,6 +832,14 @@ const MapPage = () => {
 
   const handleCategoryClick = async (category) => {
     setActiveCategory(category);
+
+    if (!isLocationAllowed()) {
+      setLocationEnabled(false);
+      resetPlacesForLocationOff();
+      return;
+    }
+
+    setLocationEnabled(true);
 
     if (category === "북마크") {
       await fetchBookmarkedPlaces(
@@ -916,7 +978,7 @@ const MapPage = () => {
           </SheetTitle>
 
           {places.length > 0 ? (
-            places.slice(0, 3).map((place) => (
+            places.map((place) => (
               <PlaceCard
                 key={place.id}
                 $selected={selectedPlaceId === place.id}
@@ -966,11 +1028,13 @@ const MapPage = () => {
             <EmptyText>
               {activeCategory === "북마크"
                 ? "북마크한 장소가 없어요"
+                : !locationEnabled
+                  ? "마이페이지에서 위치 정보 허용을 켜주세요."
                 : currentDistrict
                   ? `현재 위치한 ${currentDistrict}에는 정보를 제공하지 않습니다.`
                   : "가까운 분리배출 장소를 불러오는 중이에요"}
             </EmptyText>
-            {currentDistrict && activeCategory !== "북마크" && (
+            {locationEnabled && currentDistrict && activeCategory !== "북마크" && (
             <ReportButton
               onClick={() => navigate("/report-location")}
             >

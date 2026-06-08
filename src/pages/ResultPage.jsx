@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import { useLocation, useNavigate } from "react-router-dom";
 import BiumResultImg from "../assets/img/Bium_result.svg";
@@ -22,6 +22,8 @@ const ResultPage = () => {
   // 📍 말풍선 설명창 열림/닫힘 상태 관리
   const [showTooltip, setShowTooltip] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+  const autoSaveAttemptedRef = useRef(false);
 
   // 백엔드 연동 전 기본 더미 객체 정의
   const { result, capturedImage } = location.state || {
@@ -61,48 +63,90 @@ const ResultPage = () => {
     }
   };
 
-  // 결과 저장 트리거 핸들러
-  const handleSaveResult = async () => {
-    if (isSaving) return;
+  const saveResult = useCallback(
+    async ({ silent = false } = {}) => {
+      if (isSaving || isSaved) return false;
 
-    try {
-      setIsSaving(true);
+      try {
+        setIsSaving(true);
 
-      const payload = {
-        userId: localStorage.getItem("userId"),
-        imageUrl: result.imageUrl || capturedImage,
-        itemName: result.itemName || result.item,
-        item: result.item || result.itemName,
-        primaryMaterial: result.primaryMaterial,
-        isRecyclable: result.isRecyclable,
-        disposalMethodSummary: result.disposalMethodSummary,
-        disposalSteps: result.disposalSteps,
-        aiSummary: result.aiSummary,
-        contaminationStatus: result.contaminationStatus || "good",
-        confidence: result.confidence || 90,
-      };
+        const payload = {
+          userId: localStorage.getItem("userId"),
+          imageUrl: result.imageUrl || capturedImage,
+          itemName: result.itemName || result.item,
+          item: result.item || result.itemName,
+          primaryMaterial: result.primaryMaterial,
+          isRecyclable: result.isRecyclable,
+          disposalMethodSummary: result.disposalMethodSummary,
+          disposalSteps: result.disposalSteps,
+          aiSummary: result.aiSummary,
+          contaminationStatus: result.contaminationStatus || "good",
+          confidence: result.confidence || 90,
+        };
 
-      const response = await fetch(`${SPRING_API_BASE}/api/analysis`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
+        const response = await fetch(`${SPRING_API_BASE}/api/analysis`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        });
 
-      const data = await response.json().catch(() => ({}));
+        const data = await response.json().catch(() => ({}));
 
-      if (!response.ok) {
-        throw new Error(data.message || "저장 요청에 실패했습니다.");
+        if (!response.ok) {
+          throw new Error(data.message || "저장 요청에 실패했습니다.");
+        }
+
+        setIsSaved(true);
+
+        if (!silent) {
+          alert(data.message || "결과가 저장되었습니다.");
+        }
+
+        return true;
+      } catch (error) {
+        console.error(error);
+
+        if (!silent) {
+          alert(error.message || "저장에 실패했습니다.");
+        }
+
+        return false;
+      } finally {
+        setIsSaving(false);
+      }
+    },
+    [capturedImage, isSaved, isSaving, result],
+  );
+
+  useEffect(() => {
+    if (autoSaveAttemptedRef.current) return;
+    if (localStorage.getItem("autoSave") !== "true") return;
+
+    const autoSaveKey = [
+      "reco-auto-save",
+      result.analysisId || result.id || result.itemName || result.item,
+      result.imageUrl || capturedImage?.slice(0, 80) || "",
+    ].join(":");
+
+    if (sessionStorage.getItem(autoSaveKey)) return;
+
+    autoSaveAttemptedRef.current = true;
+    sessionStorage.setItem(autoSaveKey, "pending");
+
+    saveResult({ silent: true }).then((saved) => {
+      if (saved) {
+        sessionStorage.setItem(autoSaveKey, "saved");
+        return;
       }
 
-      alert(data.message || "결과가 저장되었습니다.");
-    } catch (error) {
-      console.error(error);
-      alert(error.message || "저장에 실패했습니다.");
-    } finally {
-      setIsSaving(false);
-    }
+      sessionStorage.removeItem(autoSaveKey);
+    });
+  }, [capturedImage, result, saveResult]);
+
+  const handleSaveResult = () => {
+    saveResult();
   };
   const disposalSteps = result.disposalMethodSummary
     ? result.disposalMethodSummary.split("\n")
@@ -220,7 +264,7 @@ const ResultPage = () => {
 
       <ActionButtonGroup>
         <ActionButton onClick={handleSaveResult}>
-          {isSaving ? "저장 중..." : "결과 저장"}
+          {isSaving ? "저장 중..." : isSaved ? "저장 완료" : "결과 저장"}
         </ActionButton>
         <ActionButton
           onClick={() =>
