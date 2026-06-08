@@ -250,6 +250,7 @@ const MyPage = () => {
       localStorage.setItem("locationAllowed", "false")
       localStorage.removeItem("lastLatitude")
       localStorage.removeItem("lastLongitude")
+      window.dispatchEvent(new Event("reco-location-permission-change"))
       return
     }
 
@@ -264,10 +265,12 @@ const MyPage = () => {
         localStorage.setItem("locationAllowed", "true")
         localStorage.setItem("lastLatitude", String(position.coords.latitude))
         localStorage.setItem("lastLongitude", String(position.coords.longitude))
+        window.dispatchEvent(new Event("reco-location-permission-change"))
       },
       () => {
         setLocationAllowed(false)
         localStorage.setItem("locationAllowed", "false")
+        window.dispatchEvent(new Event("reco-location-permission-change"))
         alert("위치 정보 권한이 필요합니다.")
       },
     )
@@ -368,7 +371,7 @@ const MyPage = () => {
 
       <SettingSection>
         <SettingRow>
-          <SettingText>자동 저장 모드</SettingText>
+          <SettingText>자동 결과 저장</SettingText>
           <Toggle type="button" $isOn={autoSave} onClick={handleAutoSave}>
             <ToggleCircle $isOn={autoSave} />
           </Toggle>
