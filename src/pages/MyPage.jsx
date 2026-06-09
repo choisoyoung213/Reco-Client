@@ -363,7 +363,7 @@ const MyPage = () => {
           )}
 
           <EditButton onClick={handleEditName}>
-            {isEditing ? "✓" : <img src={EditIcon} width={14} height={14} />}
+            {isEditing ? "✓" : <img src={EditIcon} width={23} height={23} />}
           </EditButton>
         </UserNameRow>
         <LogoutButton onClick={handleLogout}>로그아웃</LogoutButton>

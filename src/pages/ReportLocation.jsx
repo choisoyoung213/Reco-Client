@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react"
 import styled from "styled-components"
 import { useNavigate } from "react-router-dom"
 import { getRequiredEnv } from "../config/env"
+import BackIcon from "../assets/img/Vector.svg"
 
 const Container = styled.div`
   display: flex;
@@ -23,14 +24,21 @@ const Header = styled.div`
 const BackButton = styled.div`
   position: absolute;
   left: 24px;
-  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  color: #272727;
+  padding: 4px;
+`
+
+const BackIconImg = styled.img`
+  width: 12px;
+  height: auto;
 `
 
 const Title = styled.p`
   font-family: 'Paperlogy';
-  font-size: 16px;
+  font-size: 19px;
   font-weight: 600;
   color: #272727;
 `
@@ -72,6 +80,7 @@ const CategoryItem = styled.div`
 const AddressBox = styled.div`
   display: flex;
   gap: 8px;
+  width: 100%;
 `
 
 const AddressInput = styled.input`
@@ -83,6 +92,7 @@ const AddressInput = styled.input`
   font-size: 14px;
   outline: none;
   background: #fff;
+  min-width: 0;
 
   &::placeholder {
     color: #b8b8b8;
@@ -94,7 +104,10 @@ const AddressInput = styled.input`
 `
 
 const SearchButton = styled.button`
-  padding: 12px 16px;
+  width: 72px;
+  flex-shrink: 0;
+
+  padding: 12px 0;
   border-radius: 10px;
   background: #53B175;
   border: none;
@@ -103,7 +116,6 @@ const SearchButton = styled.button`
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  white-space: nowrap;
 `
 
 const SearchResultBox = styled.div`
@@ -266,7 +278,9 @@ const ReportLocation = () => {
     return (
         <Container ref={mapRef}>
             <Header>
-                <BackButton onClick={() => navigate(-1)}>{"<"}</BackButton>
+                <BackButton onClick={() => navigate(-1)}>
+                    <BackIconImg src={BackIcon} alt="Back" />
+                </BackButton>
                 <Title>{"\uc704\uce58 \uc81c\ubcf4\ud558\uae30"}</Title>
             </Header>
 
