@@ -1,9 +1,11 @@
 import React from "react";
 import styled from "styled-components";
+import { useNavigate } from "react-router-dom";
 import { CommonLayout } from "../components/CommonLayout";
 
 // 이미지
 import PaperIcon from "../assets/img/paperIcon.svg";
+import BackIcon from "../assets/img/Vector.svg";
 
 /* ===== Styles ===== */
 const PageContent = styled.div`
@@ -11,13 +13,36 @@ const PageContent = styled.div`
   text-align: left;
 `;
 
+const HeaderContainer = styled.div`
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+  position: relative;
+`;
+
+const BackBtn = styled.div`
+  position: absolute;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 4px;
+`;
+
+const BackIconImg = styled.img`
+  width: 12px;
+  height: auto;
+`;
+
 const HeaderTitle = styled.h1`
+  flex: 1;
   text-align: center;
-  font-family: 'Paperlogy', sans-serif; /* 폰트 패밀리 명시 */
+  font-family: 'Paperlogy', sans-serif;
   font-weight: 700;
   font-size: 32px;
   color: #53b175;
-  margin-bottom: 20px;
+  margin: 0;
 `;
 
 const MainIcon = styled.div`
@@ -101,71 +126,74 @@ const WarningList = styled.ul`
   padding: 0;
   margin: 0;
   
-  /* 디자인 포인트: 가독성을 위한 스타일 */
   font-size: 13px;
-  font-weight: 500;    /* 너무 굵지 않게 */
+  font-weight: 500;
   color: #333;
-  line-height: 1.6;    /* 답답하지 않게 줄 간격 확보 */
-  text-align: left;    /* 깔끔한 왼쪽 정렬 */
+  line-height: 1.6;
+  text-align: left;
   
-  word-break: keep-all; /* 단어 단위로 줄바꿈 */
+  word-break: keep-all;
 
   li {
-    margin-bottom: 8px; /* 문장 간의 간격 확보 */
+    margin-bottom: 8px;
     position: relative;
-    padding-left: 12px; /* 불렛 위치 확보 */
+    padding-left: 12px;
   }
 `;
 
 /* ===== Component ===== */
 const PaperDetail = () => {
+    const navigate = useNavigate();
+
     return (
-        <>
-            <CommonLayout>
-                <CommonLayout>
-                    <PageContent>
-                        <HeaderTitle>종이</HeaderTitle>
-                        <MainIcon />
+        <CommonLayout>
+            <PageContent>
+                <HeaderContainer>
+                    <BackBtn onClick={() => navigate(-1)}>
+                        <BackIconImg src={BackIcon} alt="Back" />
+                    </BackBtn>
+                    <HeaderTitle>종이</HeaderTitle>
+                </HeaderContainer>
 
-                        <ContentCard>
-                            <CardTitle>종이 이렇게 버려요.</CardTitle>
-                            <StepList>
-                                <StepItem>
-                                    <StepHeader>1. 이물질 제거</StepHeader>
-                                    <SubText>→ 음식물이나 물기가 묻지 않도록 깨끗하게 해주세요</SubText>
-                                    <SubText>→ 오염된 종이는 재활용이 어렵습니다</SubText>
-                                </StepItem>
-                                <StepItem>
-                                    <StepHeader>2. 부피 줄이기</StepHeader>
-                                    <SubText>→ 박스는 접고 신문지는 묶어서 배출해주세요</SubText>
-                                    <SubText>→ 부피를 줄이면 수거가 훨씬 쉬워져요</SubText>
-                                </StepItem>
-                                <StepItem>
-                                    <StepHeader>3. 다른 재질 제거</StepHeader>
-                                    <SubText>→ 테이프, 비닐, 스티커 등은 반드시 떼어내 주세요</SubText>
-                                    <SubText>→ 종이가 아닌 재질이 섞이면 재활용이 불가능해요</SubText>
-                                </StepItem>
-                                <StepItem>
-                                    <StepHeader>4. 종이 구분하기</StepHeader>
-                                    <SubText>→ 코팅된 종이(영수증 등)는 일반쓰레기로 버려주세요</SubText>
-                                    <SubText>→ 일반 종이와 함께 버리면 재활용이 어렵습니다</SubText>
-                                </StepItem>
-                            </StepList>
-                            <Tip>💡 깨끗하고 마른 종이만 재활용 가능해요</Tip>
-                        </ContentCard>
+                <MainIcon />
 
-                        <WarningCard>
-                            <WarningTitle>종이류 - ⚠️ 주의사항</WarningTitle>
-                            <WarningList>
-                                <li>젖거나 기름이 묻은 종이는 재활용이 불가능해요</li>
-                                <li>코팅된 종이(영수증, 종이컵)는 일반쓰레기로 버려요</li>
-                                <li>테이프나 스티커가 붙어 있으면 꼭 제거해주세요</li>
-                            </WarningList>
-                        </WarningCard>
-                    </PageContent>
-                </CommonLayout>
-            </CommonLayout>
-        </>
+                <ContentCard>
+                    <CardTitle>종이 이렇게 버려요.</CardTitle>
+                    <StepList>
+                        <StepItem>
+                            <StepHeader>1. 이물질 제거</StepHeader>
+                            <SubText>→ 음식물이나 물기가 묻지 않도록 깨끗하게 해주세요</SubText>
+                            <SubText>→ 오염된 종이는 재활용이 어렵습니다</SubText>
+                        </StepItem>
+                        <StepItem>
+                            <StepHeader>2. 부피 줄이기</StepHeader>
+                            <SubText>→ 박스는 접고 신문지는 묶어서 배출해주세요</SubText>
+                            <SubText>→ 부피를 줄이면 수거가 훨씬 쉬워요</SubText>
+                        </StepItem>
+                        <StepItem>
+                            <StepHeader>3. 다른 재질 제거</StepHeader>
+                            <SubText>→ 테이프, 비닐, 스티커 등은 반드시 떼어내 주세요</SubText>
+                            <SubText>→ 종이가 아닌 재질이 섞이면 재활용이 불가능해요</SubText>
+                        </StepItem>
+                        <StepItem>
+                            <StepHeader>4. 종이 구분하기</StepHeader>
+                            <SubText>→ 코팅된 종이(영수증 등)는 일반쓰레기로 버려주세요</SubText>
+                            <SubText>→ 일반 종이와 함께 버리면 재활용이 어렵습니다</SubText>
+                        </StepItem>
+                    </StepList>
+                    <Tip>💡 깨끗하고 마른 종이만 재활용 가능해요</Tip>
+                </ContentCard>
+
+                <WarningCard>
+                    <WarningTitle>종이류 - ⚠️ 주의사항</WarningTitle>
+                    <WarningList>
+                        <li>젖거나 기름이 묻은 종이는 재활용이 불가능해요</li>
+                        <li>코팅된 종이(영수증, 종이컵)는 일반쓰레기로 버려요</li>
+                        <li>테이프나 스티커가 붙어 있으면 꼭 제거해주세요</li>
+                    </WarningList>
+                </WarningCard>
+            </PageContent>
+        </CommonLayout>
     );
 };
 

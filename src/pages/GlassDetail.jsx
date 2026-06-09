@@ -1,9 +1,10 @@
 import React from "react";
 import styled from "styled-components";
+import { useNavigate } from "react-router-dom";
 import { CommonLayout } from "../components/CommonLayout";
 
-// 이미지 (assets/img 폴더에 glassIcon.svg 파일이 있는지 확인하세요!)
 import GlassIcon from "../assets/img/glassIcon.svg";
+import BackIcon from "../assets/img/Vector.svg";
 
 /* ===== Styles (기존과 동일) ===== */
 const PageContent = styled.div`
@@ -11,13 +12,36 @@ const PageContent = styled.div`
   text-align: left;
 `;
 
+const HeaderContainer = styled.div`
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+  position: relative;
+`;
+
+const BackBtn = styled.div`
+  position: absolute;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 4px;
+`;
+
+const BackIconImg = styled.img`
+  width: 12px;
+  height: auto;
+`;
+
 const HeaderTitle = styled.h1`
+  flex: 1;
   text-align: center;
   font-family: 'Paperlogy', sans-serif;
   font-weight: 700;
   font-size: 32px;
   color: #53b175;
-  margin-bottom: 20px;
+  margin: 0; 
 `;
 
 const MainIcon = styled.div`
@@ -97,73 +121,76 @@ const WarningTitle = styled.div`
 `;
 
 const WarningList = styled.ul`
-  list-style: none; /* 불렛 제거 */
+  list-style: none;
   padding: 0;
   margin: 0;
-  
-  /* 디자인 포인트: 가독성을 위한 스타일 */
   font-size: 13px;
-  font-weight: 500;    /* 너무 굵지 않게 */
+  font-weight: 500;
   color: #333;
-  line-height: 1.6;    /* 답답하지 않게 줄 간격 확보 */
-  text-align: left;    /* 깔끔한 왼쪽 정렬 */
-  
-  word-break: keep-all; /* 단어 단위로 줄바꿈 */
+  line-height: 1.6;
+  text-align: left;
+  word-break: keep-all;
 
   li {
-    margin-bottom: 8px; /* 문장 간의 간격 확보 */
+    margin-bottom: 8px;
     position: relative;
-    padding-left: 12px; /* 불렛 위치 확보 */
+    padding-left: 12px;
   }
 `;
 
 /* ===== Component ===== */
 const GlassDetail = () => {
-    return (
-        <CommonLayout>
-            <PageContent>
-                <HeaderTitle>유리</HeaderTitle>
-                <MainIcon />
+  const navigate = useNavigate();
+  return (
+    <CommonLayout>
+      <PageContent>
+        <HeaderContainer>
+          <BackBtn onClick={() => navigate(-1)}>
+            <BackIconImg src={BackIcon} alt="Back" />
+          </BackBtn>
+        <HeaderTitle>유리</HeaderTitle>
+        </HeaderContainer>
+        <MainIcon />
 
-                <ContentCard>
-                    <CardTitle>유리 이렇게 버려요.</CardTitle>
-                    <StepList>
-                        <StepItem>
-                            <StepHeader>1. 내용물 비우기</StepHeader>
-                            <SubText>→ 병 안에 남아 있는 음료나 내용물을 모두 비워주세요</SubText>
-                        </StepItem>
-                        <StepItem>
-                            <StepHeader>2. 뚜껑 분리</StepHeader>
-                            <SubText>→ 금속이나 플라스틱으로 된 뚜껑은 분리해서 버려주세요</SubText>
-                        </StepItem>
-                        <StepItem>
-                            <StepHeader>3. 세척하기</StepHeader>
-                            <SubText>→ 가능하다면 물로 한 번 헹궈 깨끗하게 해주세요</SubText>
-                        </StepItem>
-                        <StepItem>
-                            <StepHeader>4. 안전하게 배출</StepHeader>
-                            <SubText>→ 깨지지 않도록 조심해서 배출해주세요</SubText>
-                            <SubText>→ 깨진 유리는 신문지에 싸서 일반쓰레기로 버려주세요</SubText>
-                        </StepItem>
-                        <StepItem>
-                            <StepHeader>5. 유리 구분하기</StepHeader>
-                            <SubText>→ 도자기, 거울, 내열유리는 재활용이 되지 않아요</SubText>
-                        </StepItem>
-                    </StepList>
-                    <Tip>💡 유리는 "병만" 재활용 가능해요</Tip>
-                </ContentCard>
+        <ContentCard>
+          <CardTitle>유리 이렇게 버려요.</CardTitle>
+          <StepList>
+            <StepItem>
+              <StepHeader>1. 내용물 비우기</StepHeader>
+              <SubText>→ 병 안에 남아 있는 음료나 내용물을 모두 비워주세요</SubText>
+            </StepItem>
+            <StepItem>
+              <StepHeader>2. 뚜껑 분리</StepHeader>
+              <SubText>→ 금속이나 플라스틱으로 된 뚜껑은 분리해서 버려주세요</SubText>
+            </StepItem>
+            <StepItem>
+              <StepHeader>3. 세척하기</StepHeader>
+              <SubText>→ 가능하다면 물로 한 번 헹궈 깨끗하게 해주세요</SubText>
+            </StepItem>
+            <StepItem>
+              <StepHeader>4. 안전하게 배출</StepHeader>
+              <SubText>→ 깨지지 않도록 조심해서 배출해주세요</SubText>
+              <SubText>→ 깨진 유리는 신문지에 싸서 일반쓰레기로 버려주세요</SubText>
+            </StepItem>
+            <StepItem>
+              <StepHeader>5. 유리 구분하기</StepHeader>
+              <SubText>→ 도자기, 거울, 내열유리는 재활용이 되지 않아요</SubText>
+            </StepItem>
+          </StepList>
+          <Tip>💡 유리는 "병만" 재활용 가능해요</Tip>
+        </ContentCard>
 
-                <WarningCard>
-                    <WarningTitle>유리 - ⚠️ 주의사항</WarningTitle>
-                    <WarningList>
-                        <li>깨진 유리는 재활용이 불가능해요</li>
-                        <li>도자기, 거울, 내열유리는 함께 버리면 안 돼요</li>
-                        <li>배출 시 다치지 않도록 주의해주세요</li>
-                    </WarningList>
-                </WarningCard>
-            </PageContent>
-        </CommonLayout>
-    );
+        <WarningCard>
+          <WarningTitle>유리 - ⚠️ 주의사항</WarningTitle>
+          <WarningList>
+            <li>깨진 유리는 재활용이 불가능해요</li>
+            <li>도자기, 거울, 내열유리는 함께 버리면 안 돼요</li>
+            <li>배출 시 다치지 않도록 주의해주세요</li>
+          </WarningList>
+        </WarningCard>
+      </PageContent>
+    </CommonLayout>
+  );
 };
 
 export default GlassDetail;

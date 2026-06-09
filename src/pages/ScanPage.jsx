@@ -146,7 +146,6 @@ const HiddenFileInput = styled.input`
   display: none;
 `;
 
-/* 📍 안 나오던 원인 교정: 위치(absolute)와 레이어 순서(z-index) 부여 */
 const BackBtn = styled.div`
   position: absolute;
   top: 40px;
@@ -160,7 +159,6 @@ const BackBtn = styled.div`
   padding: 8px;
 `;
 
-/* 📍 SVG 아이콘 크기 제어 */
 const BackIconImg = styled.img`
   width: 12px;
   height: auto;
@@ -195,7 +193,7 @@ const ScanFrame = styled.div`
 
 const UploadButton = styled.div`
   position: absolute;
-  top: 660px;
+  top: 750px;
   left: 50%;
   transform: translateX(-50%);
 

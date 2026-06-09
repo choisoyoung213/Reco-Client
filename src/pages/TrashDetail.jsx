@@ -1,9 +1,10 @@
 import React from "react";
 import styled from "styled-components";
+import { useNavigate } from "react-router-dom";
 import { CommonLayout } from "../components/CommonLayout";
 
-// 이미지: assets/img 폴더에 trashIcon.svg 파일이 있는지 확인하세요!
 import TrashIcon from "../assets/img/trashIcon.svg";
+import BackIcon from "../assets/img/Vector.svg";
 
 /* ===== Styles (공통) ===== */
 const PageContent = styled.div`
@@ -11,13 +12,36 @@ const PageContent = styled.div`
   text-align: left;
 `;
 
+const HeaderContainer = styled.div`
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+  position: relative;
+`;
+
+const BackBtn = styled.div`
+  position: absolute;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 4px;
+`;
+
+const BackIconImg = styled.img`
+  width: 12px;
+  height: auto;
+`;
+
 const HeaderTitle = styled.h1`
+  flex: 1;
   text-align: center;
   font-family: 'Paperlogy', sans-serif;
   font-weight: 700;
   font-size: 32px;
   color: #53b175;
-  margin-bottom: 20px;
+  margin: 0; 
 `;
 
 const MainIcon = styled.div`
@@ -97,72 +121,75 @@ const WarningTitle = styled.div`
 `;
 
 const WarningList = styled.ul`
-  list-style: none; /* 불렛 제거 */
+  list-style: none;
   padding: 0;
   margin: 0;
-  
-  /* 디자인 포인트: 가독성을 위한 스타일 */
   font-size: 13px;
-  font-weight: 500;    /* 너무 굵지 않게 */
+  font-weight: 500;
   color: #333;
-  line-height: 1.6;    /* 답답하지 않게 줄 간격 확보 */
-  text-align: left;    /* 깔끔한 왼쪽 정렬 */
-  
-  word-break: keep-all; /* 단어 단위로 줄바꿈 */
+  line-height: 1.6;
+  text-align: left;
+  word-break: keep-all;
 
   li {
-    margin-bottom: 8px; /* 문장 간의 간격 확보 */
+    margin-bottom: 8px;
     position: relative;
-    padding-left: 12px; /* 불렛 위치 확보 */
+    padding-left: 12px;
   }
 `;
 
 /* ===== Component ===== */
 const TrashDetail = () => {
-    return (
-        <CommonLayout>
-            <PageContent>
-                <HeaderTitle>일반쓰레기</HeaderTitle>
-                <MainIcon />
+  const navigate = useNavigate();
+  return (
+    <CommonLayout>
+      <PageContent>
+        <HeaderContainer>
+          <BackBtn onClick={() => navigate(-1)}>
+            <BackIconImg src={BackIcon} alt="Back" />
+          </BackBtn>
+          <HeaderTitle>일반쓰레기</HeaderTitle>
+        </HeaderContainer>
+        <MainIcon />
 
-                <ContentCard>
-                    <CardTitle>일반쓰레기 이렇게 버려요.</CardTitle>
-                    <StepList>
-                        <StepItem>
-                            <StepHeader>1. 재활용 여부 확인</StepHeader>
-                            <SubText>→ 재활용이 어려운 쓰레기만 따로 모아주세요</SubText>
-                        </StepItem>
-                        <StepItem>
-                            <StepHeader>2. 종량제 봉투 사용</StepHeader>
-                            <SubText>→ 지정된 쓰레기 봉투에 담아 배출해주세요</SubText>
-                        </StepItem>
-                        <StepItem>
-                            <StepHeader>3. 오염된 재활용 처리</StepHeader>
-                            <SubText>→ 이물질이 묻은 재활용품은 일반쓰레기로 버려주세요</SubText>
-                        </StepItem>
-                        <StepItem>
-                            <StepHeader>4. 대표적인 품목</StepHeader>
-                            <SubText>→ 휴지, 기저귀, 칫솔, 깨진 유리 등이 해당됩니다</SubText>
-                        </StepItem>
-                        <StepItem>
-                            <StepHeader>5. 혼합 재질 주의</StepHeader>
-                            <SubText>→ 여러 재질이 섞여 분리가 어려운 경우 일반쓰레기로 버려주세요</SubText>
-                        </StepItem>
-                    </StepList>
-                    <Tip>💡 헷갈릴 때는 일반쓰레기로 버리는 것이 안전해요</Tip>
-                </ContentCard>
+        <ContentCard>
+          <CardTitle>일반쓰레기 이렇게 버려요.</CardTitle>
+          <StepList>
+            <StepItem>
+              <StepHeader>1. 재활용 여부 확인</StepHeader>
+              <SubText>→ 재활용이 어려운 쓰레기만 따로 모아주세요</SubText>
+            </StepItem>
+            <StepItem>
+              <StepHeader>2. 종량제 봉투 사용</StepHeader>
+              <SubText>→ 지정된 쓰레기 봉투에 담아 배출해주세요</SubText>
+            </StepItem>
+            <StepItem>
+              <StepHeader>3. 오염된 재활용 처리</StepHeader>
+              <SubText>→ 이물질이 묻은 재활용품은 일반쓰레기로 버려주세요</SubText>
+            </StepItem>
+            <StepItem>
+              <StepHeader>4. 대표적인 품목</StepHeader>
+              <SubText>→ 휴지, 기저귀, 칫솔, 깨진 유리 등이 해당됩니다</SubText>
+            </StepItem>
+            <StepItem>
+              <StepHeader>5. 혼합 재질 주의</StepHeader>
+              <SubText>→ 여러 재질이 섞여 분리가 어려운 경우 일반쓰레기로 버려주세요</SubText>
+            </StepItem>
+          </StepList>
+          <Tip>💡 헷갈릴 때는 일반쓰레기로 버리는 것이 안전해요</Tip>
+        </ContentCard>
 
-                <WarningCard>
-                    <WarningTitle>일반쓰레기 - ⚠️ 주의사항</WarningTitle>
-                    <WarningList>
-                        <li>재활용 가능한 자원을 함께 버리지 않도록 주의해주세요</li>
-                        <li>종량제 봉투를 사용하지 않으면 수거되지 않을 수 있어요</li>
-                        <li>지역별 배출 규칙을 확인하는 것이 좋아요</li>
-                    </WarningList>
-                </WarningCard>
-            </PageContent>
-        </CommonLayout>
-    );
+        <WarningCard>
+          <WarningTitle>일반쓰레기 - ⚠️ 주의사항</WarningTitle>
+          <WarningList>
+            <li>재활용 가능한 자원을 함께 버리지 않도록 주의해주세요</li>
+            <li>종량제 봉투를 사용하지 않으면 수거되지 않을 수 있어요</li>
+            <li>지역별 배출 규칙을 확인하는 것이 좋아요</li>
+          </WarningList>
+        </WarningCard>
+      </PageContent>
+    </CommonLayout>
+  );
 };
 
 export default TrashDetail;

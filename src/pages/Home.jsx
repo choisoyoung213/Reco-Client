@@ -104,7 +104,7 @@ const Card = styled.div`
 
 const CategoryGrid = styled.div`
   position: absolute;
-  top: 305px; /* 검색바 영역 제외 후 최상단으로 재배치 */
+  top: 305px;
   left: 20px;
   width: 353px;
   display: flex;
@@ -130,16 +130,16 @@ const CategoryIcon = styled.div`
   width: 52px;
   height: 52px;
   margin: 0 auto 8px;
-  background-image: url(${props => props.img});
+  
+  background-image: url(${props => props.$img}); 
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
 `;
 
 const CategoryText = styled.div`
-  font-family: Paperlogy;
+  font-size: 12px;
   font-weight: 500;
-  font-size: 13px;
   color: #272727;
 `;
 
@@ -316,7 +316,7 @@ const Home = () => {
     time: "지금",
     unreadCount: 1
   });
-  
+
   useEffect(() => {
     let isMounted = true;
 
@@ -448,12 +448,12 @@ const Home = () => {
 
         {/* 카테고리 슬라이더 배치 (상단 배치 완료) */}
         <CategoryGrid>
-          <CategoryItem onClick={() => navigate('/paper')}><CategoryIcon img={PaperIcon} /><CategoryText>종이</CategoryText></CategoryItem>
-          <CategoryItem onClick={() => navigate('/plastic')}><CategoryIcon img={PlasticIcon} /><CategoryText>플라스틱</CategoryText></CategoryItem>
-          <CategoryItem onClick={() => navigate('/glass')}><CategoryIcon img={GlassIcon} /><CategoryText>유리</CategoryText></CategoryItem>
-          <CategoryItem onClick={() => navigate('/food')}><CategoryIcon img={FtIcon} /><CategoryText>음식물</CategoryText></CategoryItem>
-          <CategoryItem onClick={() => navigate('/can')}><CategoryIcon img={CanIcon} /><CategoryText>캔</CategoryText></CategoryItem>
-          <CategoryItem onClick={() => navigate('/trash')}><CategoryIcon img={TrashIcon} /><CategoryText>일반쓰레기</CategoryText></CategoryItem>
+          <CategoryItem onClick={() => navigate('/paper')}><CategoryIcon $img={PaperIcon} /><CategoryText>종이</CategoryText></CategoryItem>
+          <CategoryItem onClick={() => navigate('/plastic')}><CategoryIcon $img={PlasticIcon} /><CategoryText>플라스틱</CategoryText></CategoryItem>
+          <CategoryItem onClick={() => navigate('/glass')}><CategoryIcon $img={GlassIcon} /><CategoryText>유리</CategoryText></CategoryItem>
+          <CategoryItem onClick={() => navigate('/food')}><CategoryIcon $img={FtIcon} /><CategoryText>음식물</CategoryText></CategoryItem>
+          <CategoryItem onClick={() => navigate('/can')}><CategoryIcon $img={CanIcon} /><CategoryText>캔</CategoryText></CategoryItem>
+          <CategoryItem onClick={() => navigate('/trash')}><CategoryIcon $img={TrashIcon} /><CategoryText>일반쓰레기</CategoryText></CategoryItem>
         </CategoryGrid>
 
         {/* 위치 정보 헤더 */}
@@ -472,7 +472,7 @@ const Home = () => {
         <ChatbotBannerSection>
           <ChatbotSubTitle>헷갈리거나 궁금하다면</ChatbotSubTitle>
           <ChatbotMainTitle>비움이와 채팅하러가기</ChatbotMainTitle>
-          
+
           <ChatbotCard onClick={() => navigate("/chatbot")}>
             <ChatbotCharacterCircle />
             <ChatbotTextWrapper>
@@ -484,7 +484,7 @@ const Home = () => {
               <ChatbotPreviewRow>
                 {/* 마지막 대화 내용 뜨는 부분 */}
                 <ChatbotMessagePreview>{lastChatMessage.text}</ChatbotMessagePreview>
-                
+
                 {/* 안읽은 메세지가 있을 때만 배지 띄우기 */}
                 {lastChatMessage.unreadCount > 0 && (
                   <ChatbotBadgeCount>{lastChatMessage.unreadCount}</ChatbotBadgeCount>

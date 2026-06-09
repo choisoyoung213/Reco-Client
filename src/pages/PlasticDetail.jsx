@@ -1,9 +1,11 @@
 import React from "react";
 import styled from "styled-components";
+import { useNavigate } from "react-router-dom"; // 📍 1. useNavigate 임포트 추가
 import { CommonLayout } from "../components/CommonLayout";
 
 // 이미지 파일
 import PlasticIcon from "../assets/img/plasticIcon.svg";
+import BackIcon from "../assets/img/Vector.svg"; // 📍 2. BackIcon(뒤로가기 아이콘) 임포트 추가
 
 /* ===== Styles ===== */
 const PageContent = styled.div`
@@ -11,13 +13,36 @@ const PageContent = styled.div`
   text-align: left;
 `;
 
+const HeaderContainer = styled.div`
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+  position: relative;
+`;
+
+const BackBtn = styled.div`
+  position: absolute;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 4px;
+`;
+
+const BackIconImg = styled.img`
+  width: 12px;
+  height: auto;
+`;
+
 const HeaderTitle = styled.h1`
+  flex: 1; /* 타이틀을 가운데 정렬하기 위해 남은 공간을 채우도록 수정 */
   text-align: center;
   font-family: 'Paperlogy', sans-serif;
   font-weight: 700;
   font-size: 32px;
   color: #53b175;
-  margin-bottom: 20px;
+  margin: 0; 
 `;
 
 const MainIcon = styled.div`
@@ -97,77 +122,83 @@ const WarningTitle = styled.div`
 `;
 
 const WarningList = styled.ul`
-  list-style: none; /* 불렛 제거 */
+  list-style: none;
   padding: 0;
   margin: 0;
-  
-  /* 디자인 포인트: 가독성을 위한 스타일 */
   font-size: 13px;
-  font-weight: 500;    /* 너무 굵지 않게 */
+  font-weight: 500;
   color: #333;
-  line-height: 1.6;    /* 답답하지 않게 줄 간격 확보 */
-  text-align: left;    /* 깔끔한 왼쪽 정렬 */
-  
-  word-break: keep-all; /* 단어 단위로 줄바꿈 */
+  line-height: 1.6;
+  text-align: left;
+  word-break: keep-all;
 
   li {
-    margin-bottom: 8px; /* 문장 간의 간격 확보 */
+    margin-bottom: 8px;
     position: relative;
-    padding-left: 12px; /* 불렛 위치 확보 */
+    padding-left: 12px;
   }
 `;
 
 /* ===== Component ===== */
 const PlasticDetail = () => {
-    return (
-        <CommonLayout>
-            <PageContent>
-                <HeaderTitle>플라스틱</HeaderTitle>
-                <MainIcon />
+  const navigate = useNavigate(); // 📍 3. 컴포넌트 내부에 navigate 선언 추가
 
-                <ContentCard>
-                    <CardTitle>플라스틱 이렇게 버려요.</CardTitle>
-                    <StepList>
-                        <StepItem>
-                            <StepHeader>1. 내용물 완전히 비우기</StepHeader>
-                            <SubText>→ 용기 안에 남아 있는 음료나 음식물을 끝까지 비워주세요</SubText>
-                            <SubText>→ 남아 있으면 재활용이 어렵고 악취가 발생할 수 있어요</SubText>
-                        </StepItem>
-                        <StepItem>
-                            <StepHeader>2. 헹구기</StepHeader>
-                            <SubText>→ 물로 한 번 헹궈 이물질과 음식물을 제거해주세요</SubText>
-                            <SubText>→ 너무 더러운 상태면 재활용이 불가능해요</SubText>
-                        </StepItem>
-                        <StepItem>
-                            <StepHeader>3. 라벨 분리</StepHeader>
-                            <SubText>→ 병이나 용기에 붙어 있는 비닐 라벨을 떼어내 주세요</SubText>
-                            <SubText>→ 라벨은 비닐류로 따로 버려야 해요</SubText>
-                        </StepItem>
-                        <StepItem>
-                            <StepHeader>4. 뚜껑 분리</StepHeader>
-                            <SubText>→ 플라스틱과 다른 재질인 뚜껑은 분리해서 배출해주세요</SubText>
-                            <SubText>→ 재질이 다르면 재활용 과정에서 문제가 생겨요</SubText>
-                        </StepItem>
-                        <StepItem>
-                            <StepHeader>5. 부피 줄이기</StepHeader>
-                            <SubText>→ 페트병은 찌그러뜨려서 배출해주세요</SubText>
-                            <SubText>→ 공간을 줄여 수거와 운반이 쉬워져요</SubText>
-                        </StepItem>
-                    </StepList>
-                    <Tip>💡 비우고 → 헹구고 → 분리하면 대부분 재활용 가능해요</Tip>
-                </ContentCard>
+  return (
+    <CommonLayout>
+      <PageContent>
+        {/* 📍 4. 중복되었던 헤더 부분을 하나로 병합 및 '플라스틱'으로 텍스트 변경 */}
+        <HeaderContainer>
+          <BackBtn onClick={() => navigate(-1)}>
+            <BackIconImg src={BackIcon} alt="Back" />
+          </BackBtn>
+          <HeaderTitle>플라스틱</HeaderTitle>
+        </HeaderContainer>
+        
+        <MainIcon />
 
-                <WarningCard>
-                    <WarningTitle>플라스틱 - ⚠️ 주의사항</WarningTitle>
-                    <WarningList>
-                        <li>음식물이 남아 있으면 재활용이 어려워요</li>
-                        <li>다른 재질(금속, 종이 등)이 붙어 있으면 반드시 분리해주세요</li>
-                        <li>너무 오염된 경우 일반쓰레기로 버려야 해요</li>
-                    </WarningList>
-                </WarningCard>
-            </PageContent>
-        </CommonLayout>
-    );
+        <ContentCard>
+          <CardTitle>플라스틱 이렇게 버려요.</CardTitle>
+          <StepList>
+            <StepItem>
+              <StepHeader>1. 내용물 완전히 비우기</StepHeader>
+              <SubText>→ 용기 안에 남아 있는 음료나 음식물을 끝까지 비워주세요</SubText>
+              <SubText>→ 남아 있으면 재활용이 어렵고 악취가 발생할 수 있어요</SubText>
+            </StepItem>
+            <StepItem>
+              <StepHeader>2. 헹구기</StepHeader>
+              <SubText>→ 물로 한 번 헹궈 이물질과 음식물을 제거해주세요</SubText>
+              <SubText>→ 너무 더러운 상태면 재활용이 불가능해요</SubText>
+            </StepItem>
+            <StepItem>
+              <StepHeader>3. 라벨 분리</StepHeader>
+              <SubText>→ 병이나 용기에 붙어 있는 비닐 라벨을 떼어내 주세요</SubText>
+              <SubText>→ 라벨은 비닐류로 따로 버려야 해요</SubText>
+            </StepItem>
+            <StepItem>
+              <StepHeader>4. 뚜껑 분리</StepHeader>
+              <SubText>→ 플라스틱과 다른 재질인 뚜껑은 분리해서 배출해주세요</SubText>
+              <SubText>→ 재질이 다르면 재활용 과정에서 문제가 생겨요</SubText>
+            </StepItem>
+            <StepItem>
+              <StepHeader>5. 부피 줄이기</StepHeader>
+              <SubText>→ 페트병은 찌그러뜨려서 배출해주세요</SubText>
+              <SubText>→ 공간을 줄여 수거와 운반이 쉬워져요</SubText>
+            </StepItem>
+          </StepList>
+          <Tip>💡 비우고 → 헹구고 → 분리하면 대부분 재활용 가능해요</Tip>
+        </ContentCard>
+
+        <WarningCard>
+          <WarningTitle>플라스틱 - ⚠️ 주의사항</WarningTitle>
+          <WarningList>
+            <li>음식물이 남아 있으면 재활용이 어려워요</li>
+            <li>다른 재질(금속, 종이 등)이 붙어 있으면 반드시 분리해주세요</li>
+            <li>너무 오염된 경우 일반쓰레기로 버려야 해요</li>
+          </WarningList>
+        </WarningCard>
+      </PageContent>
+    </CommonLayout>
+  );
 };
 
 export default PlasticDetail;
