@@ -1,6 +1,7 @@
 import { useState } from "react";
 import styled from "styled-components";
 import { useLocation, useNavigate } from "react-router-dom";
+import BackIcon from "../assets/img/Vector.svg";
 
 const Container = styled.div`
   display: flex;
@@ -21,14 +22,21 @@ const Header = styled.div`
 const BackButton = styled.div`
   position: absolute;
   left: 24px;
-  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  color: #272727;
+  padding: 4px;
+`;
+
+const BackIconImg = styled.img`
+  width: 12px;
+  height: auto;
 `;
 
 const Title = styled.p`
   font-family: "Paperlogy";
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 600;
   color: #272727;
 `;
@@ -62,7 +70,7 @@ const QuestionType = styled.p`
 
 const QuestionTitle = styled.p`
   font-family: "Paperlogy";
-  font-size: 22px;
+  font-size: 18.5px;
   font-weight: 700;
   color: #272727;
   line-height: 1.4;
@@ -87,7 +95,7 @@ const Option = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px 20px;
+  padding: 20px;
   border-radius: 12px;
   border: ${({ $isSelected }) =>
     $isSelected ? "2px solid #53b175" : "1px solid #e0e0e0"};
@@ -134,32 +142,11 @@ const BottomButton = styled.button`
   opacity: ${({ disabled }) => (disabled ? 0.5 : 1)};
 `;
 
-const QUESTION_MAP = {
-  vinyl_plastic: {
-    title: "비닐 / 플라스틱 구분",
-    questions: [
-      "손으로 쉽게 접히는 형태인가요?",
-      "바닥에 내려놓으면 모양이 그대로 유지되나요?",
-      "봉투처럼 손잡이 부분이 있나요?",
-    ],
-  },
-  can_plastic: {
-    title: "캔 / 플라스틱 구분",
-    questions: [
-      "음료수 캔처럼 생긴 형태인가요?",
-      "윗부분에 캔을 따는 부분이 있나요?",
-      "손으로 누르면 쉽게 찌그러지나요?",
-    ],
-  },
-  glass_plastic: {
-    title: "유리 / 플라스틱 구분",
-    questions: [
-      "바닥에 떨어뜨리면 깨질 가능성이 있나요?",
-      "손으로 눌렀을 때 모양이 변하나요?",
-      "반대편이 보일 정도로 투명한가요?",
-    ],
-  },
-};
+const QUESTIONS = [
+  "바닥에 내려놓으면 모양이 그대로 유지되나요?",
+  "바닥에 떨어뜨리면 깨질 가능성이 있나요?",
+  "손으로 눌렀을 때 모양이 변하나요?",
+];
 
 const answerOptions = [
   { id: "yes", text: "맞아요" },
@@ -171,17 +158,13 @@ const AdditionalQuestion = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const questionType = location.state?.questionType || "vinyl_plastic";
-  const questionSet = QUESTION_MAP[questionType] || QUESTION_MAP.vinyl_plastic;
-  const recordId = location.state?.recordId;
-
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selected, setSelected] = useState(null);
   const [answers, setAnswers] = useState([]);
 
-  const currentQuestion = questionSet.questions[currentIndex];
-  const isLastQuestion = currentIndex === questionSet.questions.length - 1;
-  const progress = ((currentIndex + 1) / questionSet.questions.length) * 100;
+  const currentQuestion = QUESTIONS[currentIndex];
+  const isLastQuestion = currentIndex === QUESTIONS.length - 1;
+  const progress = ((currentIndex + 1) / QUESTIONS.length) * 100;
 
   const handleConfirm = () => {
     if (selected === null) return;
@@ -189,8 +172,6 @@ const AdditionalQuestion = () => {
     const nextAnswers = [
       ...answers,
       {
-        questionType,
-        questionGroup: questionSet.title,
         question: currentQuestion,
         answer: selected,
       },
@@ -199,28 +180,27 @@ const AdditionalQuestion = () => {
     setAnswers(nextAnswers);
 
     if (isLastQuestion) {
-      console.log("추가질문 답변:", nextAnswers);
-
       navigate("/loading", {
         state: {
           mode: "reanalyze",
           result: location.state?.result,
           capturedImage: location.state?.capturedImage,
           additionalAnswers: nextAnswers,
-          questionType,
         },
       });
       return;
     }
 
-    setCurrentIndex(currentIndex + 1);
+    setCurrentIndex((prev) => prev + 1);
     setSelected(null);
   };
 
   return (
     <Container>
       <Header>
-        <BackButton onClick={() => navigate(-1)}>{"<"}</BackButton>
+        <BackButton onClick={() => navigate(-1)}>
+          <BackIconImg src={BackIcon} alt="Back" />
+        </BackButton>
         <Title>추가질문</Title>
       </Header>
 
@@ -230,8 +210,7 @@ const AdditionalQuestion = () => {
 
       <Content>
         <QuestionType>
-          {currentIndex + 1}/{questionSet.questions.length} ·{" "}
-          {questionSet.title}
+          {currentIndex + 1}/{QUESTIONS.length}
         </QuestionType>
 
         <QuestionTitle>{currentQuestion}</QuestionTitle>
