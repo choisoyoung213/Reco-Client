@@ -63,7 +63,7 @@ const ContentCard = styled.div`
 `;
 
 const CardTitle = styled.h2`
-  font-family: 'Paperlogy';
+  font-family: 'Paperlogy', sans-serif;
   font-weight: 600;
   font-size: 20px;
   color: #000;
@@ -77,7 +77,7 @@ const StepList = styled.div`
 `;
 
 const StepItem = styled.div`
-  font-family: 'Paperlogy';
+  font-family: 'Paperlogy', sans-serif;
   font-size: 14px;
   color: #333;
 `;
@@ -89,6 +89,7 @@ const StepHeader = styled.div`
 `;
 
 const SubText = styled.div`
+  font-family: 'Paperlogy', sans-serif;
   font-size: 13px;
   font-weight: 600;
   color: #555;
@@ -99,6 +100,7 @@ const SubText = styled.div`
 `;
 
 const Tip = styled.div`
+  font-family: 'Paperlogy', sans-serif;
   margin-top: 20px;
   font-weight: 700;
   font-size: 13px;
@@ -113,6 +115,7 @@ const WarningCard = styled.div`
 `;
 
 const WarningTitle = styled.div`
+  font-family: 'Paperlogy', sans-serif;
   font-weight: 700;
   font-size: 16px;
   color: #000;
@@ -122,11 +125,13 @@ const WarningTitle = styled.div`
 `;
 
 const WarningList = styled.ul`
+  font-family: 'Paperlogy', sans-serif;
   list-style: none;
   padding: 0;
   margin: 0;
+
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
   color: #333;
   line-height: 1.6;
   text-align: left;
