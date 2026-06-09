@@ -533,7 +533,7 @@ const MapPage = () => {
   const getCurrentDistrict = (latitude, longitude) =>
     new Promise((resolve) => {
       if (regionLookupUnavailableRef.current) {
-        resolve("");
+        resolve("관악구");
         return;
       }
 
