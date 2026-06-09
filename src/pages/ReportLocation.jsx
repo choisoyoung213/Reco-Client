@@ -214,7 +214,7 @@ const ReportLocation = () => {
         if (existingScript) return
 
         const script = document.createElement("script")
-        script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${kakaoMapKey}&autoload=false&libraries=services`
+        script.src = `https://dapi.kakao.com/v2/maps/${kakaoMapKey}&autoload=false&libraries=services`
         script.async = true
         script.onload = () => {
             window.kakao.maps.load(() => { })

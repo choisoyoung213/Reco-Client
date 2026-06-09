@@ -156,7 +156,8 @@ const PlaceCard = styled.div`
   align-items: flex-start;
   padding: 10px;
   margin-bottom: 14px;
-  border: 1px solid ${({ $selected }) => ($selected ? "#53b175" : "transparent")};
+  border: 1px solid
+    ${({ $selected }) => ($selected ? "#53b175" : "transparent")};
   border-radius: 16px;
   background: ${({ $selected }) => ($selected ? "#f0faf4" : "transparent")};
   cursor: pointer;
@@ -285,7 +286,7 @@ const ReportButton = styled.button`
   padding: 10px 16px;
   border: none;
   border-radius: 12px;
-  background: #53B175;
+  background: #53b175;
   color: white;
   font-size: 14px;
   font-weight: 600;
@@ -466,7 +467,10 @@ const MapPage = () => {
       { offset: new window.kakao.maps.Point(21, 52) },
     );
 
-  const addPlaceMarkers = (placeList, nextSelectedPlaceId = selectedPlaceId) => {
+  const addPlaceMarkers = (
+    placeList,
+    nextSelectedPlaceId = selectedPlaceId,
+  ) => {
     if (!mapInstanceRef.current || !window.kakao) return;
 
     clearMarkers();
@@ -481,7 +485,8 @@ const MapPage = () => {
       const marker = new window.kakao.maps.Marker({
         map: mapInstanceRef.current,
         position: markerPosition,
-        image: place.id === nextSelectedPlaceId ? selectedMarkerImage : undefined,
+        image:
+          place.id === nextSelectedPlaceId ? selectedMarkerImage : undefined,
       });
 
       markerListRef.current.push(marker);
@@ -610,14 +615,7 @@ const MapPage = () => {
     });
 
   const getPlaceDistrictByInfoOrCoords = async (place) => {
-    const knownDistrict = getPlaceDistrict(place);
-
-    if (knownDistrict) return knownDistrict;
-
-    return getDistrictByCoords(
-      getPlaceLatitude(place),
-      getPlaceLongitude(place),
-    );
+    return getPlaceDistrict(place);
   };
 
   const getPlacesInDistrict = async (placeList, district) => {
@@ -635,7 +633,11 @@ const MapPage = () => {
     );
   };
 
-  const fetchPlaces = async (latitude, longitude, category = activeCategory) => {
+  const fetchPlaces = async (
+    latitude,
+    longitude,
+    category = activeCategory,
+  ) => {
     try {
       setPlaceLoadError("");
 
@@ -1063,24 +1065,22 @@ const MapPage = () => {
             ))
           ) : (
             <>
-            <EmptyText>
-              {activeCategory === "북마크"
-                ? "북마크한 장소가 없어요"
-                : placeLoadError
-                  ? placeLoadError
-                : !locationEnabled
-                  ? "마이페이지에서 위치 정보 허용을 켜주세요."
-                : currentDistrict
-                  ? `현재 위치한 ${currentDistrict}에는 정보를 제공하지 않습니다.`
-                  : "현재 위치한 구 정보를 확인하지 못했습니다."}
-            </EmptyText>
-            {locationEnabled && activeCategory !== "북마크" && (
-            <ReportButton
-              onClick={() => navigate("/report-location")}
-            >
-              위치 제보하기
-            </ReportButton>
-            )}
+              <EmptyText>
+                {activeCategory === "북마크"
+                  ? "북마크한 장소가 없어요"
+                  : placeLoadError
+                    ? placeLoadError
+                    : !locationEnabled
+                      ? "마이페이지에서 위치 정보 허용을 켜주세요."
+                      : currentDistrict
+                        ? `현재 위치한 ${currentDistrict}에는 정보를 제공하지 않습니다.`
+                        : "현재 위치한 구 정보를 확인하지 못했습니다."}
+              </EmptyText>
+              {locationEnabled && activeCategory !== "북마크" && (
+                <ReportButton onClick={() => navigate("/report-location")}>
+                  위치 제보하기
+                </ReportButton>
+              )}
             </>
           )}
         </BottomSheet>
