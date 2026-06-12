@@ -403,6 +403,14 @@ const getPlacesByDistance = (placeList, position) =>
       );
     });
 
+const getSavedBookmarks = () => {
+  try {
+    return JSON.parse(localStorage.getItem("bookmarkedPlaces")) || [];
+  } catch {
+    return [];
+  }
+};
+
 const CATEGORIES = [
   "분리수거함",
   "길거리 쓰레기통",
@@ -416,28 +424,32 @@ const CATEGORY_TYPE_MAP = {
   "길거리 쓰레기통": "TRASH",
   의류수거함: "CLOTHES",
   "폐형광등, 폐건전지 수거함": "BATTERY",
+  폐의약품: "MEDICINE",
 };
-const getCategoryImage = (category) => {
-  switch (category) {
-    case "길거리 쓰레기통":
-      return TrashImg;
 
-    case "의류수거함":
-      return ClothesImg;
-
-    case "폐형광등, 폐건전지 수거함":
-      return BatteryImg;
-
-    case "분리수거함":
-      return RecycleImg;
-
-    case "폐의약품":
-      return MedicineImg;
-
-    default:
-      return RecycleImg;
-  }
+const PLACE_TYPE_IMAGE_MAP = {
+  TRASH: TrashImg,
+  CLOTHES: ClothesImg,
+  BATTERY: BatteryImg,
+  RECYCLE: RecycleImg,
+  MEDICINE: MedicineImg,
 };
+
+const getPlaceType = (place, fallbackCategory = "") =>
+  place.placeType ||
+  CATEGORY_TYPE_MAP[place.bookmarkedCategory] ||
+  CATEGORY_TYPE_MAP[fallbackCategory] ||
+  "RECYCLE";
+
+const getPlaceImage = (place, category) =>
+  PLACE_TYPE_IMAGE_MAP[getPlaceType(place, category)] || RecycleImg;
+
+const getDisplayCategory = (place, activeCategory) =>
+  activeCategory === "북마크"
+    ? place.bookmarkedCategory || "북마크"
+    : activeCategory;
+
+const getBookmarkKey = (place) => String(place.id ?? getPlaceUniqueKey(place));
 
 const MapPage = () => {
   const navigate = useNavigate();
@@ -445,6 +457,9 @@ const MapPage = () => {
   const mapInstanceRef = useRef(null);
   const markerListRef = useRef([]);
   const markerPlacesRef = useRef([]);
+  const placeRequestIdRef = useRef(0);
+  const lastGpsPositionRef = useRef(null);
+  const lastGpsDistrictRef = useRef("");
 
   const [keyword, setKeyword] = useState("");
   const [isOpen, setIsOpen] = useState(true);
@@ -452,13 +467,12 @@ const MapPage = () => {
   const [placeLoadError, setPlaceLoadError] = useState("");
   const [selectedPlace, setSelectedPlace] = useState(null);
   const [selectedPlaceId, setSelectedPlaceId] = useState(null);
-  const [bookmarks, setBookmarks] = useState([]);
+  const [bookmarks, setBookmarks] = useState(getSavedBookmarks);
   const [activeCategory, setActiveCategory] = useState("분리수거함");
   const [currentPosition, setCurrentPosition] = useState(DEFAULT_POSITION);
   const [currentDistrict, setCurrentDistrict] = useState("");
   const [locationEnabled, setLocationEnabled] = useState(isLocationAllowed());
   const [isSearchMode, setIsSearchMode] = useState(false);
-  const [isLoadingPlaces, setIsLoadingPlaces] = useState(false);
   const DEFAULT_SHEET_HEIGHT = 250;
   const [sheetHeight, setSheetHeight] = useState(DEFAULT_SHEET_HEIGHT);
   const sheetStartHeight = useRef(DEFAULT_SHEET_HEIGHT);
@@ -468,12 +482,37 @@ const MapPage = () => {
     markerListRef.current = [];
   };
 
+  const resetPlaceState = () => {
+    placeRequestIdRef.current += 1;
+    setPlaces([]);
+    setSelectedPlace(null);
+    setSelectedPlaceId(null);
+    markerPlacesRef.current = [];
+    clearMarkers();
+  };
+
   const getSelectedMarkerImage = () =>
     new window.kakao.maps.MarkerImage(
       "data:image/svg+xml;charset=utf-8,%3Csvg%20width%3D%2242%22%20height%3D%2252%22%20viewBox%3D%220%200%2042%2052%22%20fill%3D%22none%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cpath%20d%3D%22M21%2051C21%2051%2039%2032.682%2039%2020.824C39%2010.595%2030.941%202%2021%202C11.059%202%203%2010.595%203%2020.824C3%2032.682%2021%2051%2021%2051Z%22%20fill%3D%22%2353B175%22%20stroke%3D%22white%22%20stroke-width%3D%224%22/%3E%3Ccircle%20cx%3D%2221%22%20cy%3D%2220%22%20r%3D%228%22%20fill%3D%22white%22/%3E%3C/svg%3E",
       new window.kakao.maps.Size(42, 52),
       { offset: new window.kakao.maps.Point(21, 52) },
     );
+
+  function moveToPlace(place, shouldCollapseSheet = false) {
+    setSelectedPlace(place);
+    setSelectedPlaceId(place.id);
+    setIsOpen(!shouldCollapseSheet);
+    addPlaceMarkers(markerPlacesRef.current, place.id);
+
+    if (!mapInstanceRef.current || !window.kakao) return;
+
+    const movePosition = new window.kakao.maps.LatLng(
+      place.latitude,
+      place.longitude,
+    );
+
+    mapInstanceRef.current.panTo(movePosition);
+  }
 
   const addPlaceMarkers = (
     placeList,
@@ -505,225 +544,121 @@ const MapPage = () => {
     });
   };
 
-  useEffect(() => {
-    const savedBookmarks =
-      JSON.parse(localStorage.getItem("bookmarkedPlaces")) || [];
-
-    setBookmarks(savedBookmarks);
-  }, []);
-
-  // const getCurrentDistrict = (latitude, longitude) =>
-  //   new Promise((resolve) => {
-  //     if (regionLookupUnavailableRef.current) {
-  //       resolve("관악구");
-  //       return;
-  //     }
-
-  //     if (!window.kakao?.maps?.services) {
-  //       resolve("");
-  //       return;
-  //     }
-
-  //     const geocoder = new window.kakao.maps.services.Geocoder();
-
-  //     geocoder.coord2RegionCode(longitude, latitude, (result, status) => {
-  //       if (status !== window.kakao.maps.services.Status.OK) {
-  //         if (status === window.kakao.maps.services.Status.ERROR) {
-  //           regionLookupUnavailableRef.current = true;
-  //         }
-
-  //         resolve("");
-  //         return;
-  //       }
-
-  //       const district =
-  //         result.find((item) => item.region_type === "B")?.region_2depth_name ||
-  //         result[0]?.region_2depth_name ||
-  //         "";
-
-  //       resolve(district);
-  //     });
-  //   });
-
-  const getCurrentDistrict = async () => {
-    return DEFAULT_DISTRICT;
-  };
-
-  // const getDistrictByCoords = (latitude, longitude) =>
-  //   new Promise((resolve) => {
-  //     if (regionLookupUnavailableRef.current) {
-  //       resolve("");
-  //       return;
-  //     }
-
-  //     const lat = Number(latitude);
-  //     const lon = Number(longitude);
-
-  //     if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
-  //       resolve("");
-  //       return;
-  //     }
-
-  //     const cacheKey = `${lat.toFixed(6)},${lon.toFixed(6)}`;
-  //     const cachedDistrict = districtCacheRef.current.get(cacheKey);
-
-  //     if (cachedDistrict !== undefined) {
-  //       resolve(cachedDistrict);
-  //       return;
-  //     }
-
-  //     if (!window.kakao?.maps?.services) {
-  //       resolve("");
-  //       return;
-  //     }
-
-  //     const geocoder = new window.kakao.maps.services.Geocoder();
-
-  //     geocoder.coord2RegionCode(lon, lat, (result, status) => {
-  //       if (status !== window.kakao.maps.services.Status.OK) {
-  //         if (status === window.kakao.maps.services.Status.ERROR) {
-  //           regionLookupUnavailableRef.current = true;
-  //         }
-
-  //         districtCacheRef.current.set(cacheKey, "");
-  //         resolve("");
-  //         return;
-  //       }
-
-  //       const district =
-  //         result.find((item) => item.region_type === "B")?.region_2depth_name ||
-  //         result[0]?.region_2depth_name ||
-  //         "";
-
-  //       districtCacheRef.current.set(cacheKey, district);
-  //       resolve(district);
-  //     });
-  //   });
-
-  const getPlaceDistrictByInfoOrCoords = async (place) => {
-    return getPlaceDistrict(place);
-  };
-
-  const getPlacesInDistrict = async (placeList, district) => {
-    if (!district) return [];
-
-    const placesWithDistrict = await Promise.all(
-      placeList.map(async (place) => ({
-        ...place,
-        placeDistrict: await getPlaceDistrictByInfoOrCoords(place),
-      })),
-    );
-
-    return placesWithDistrict.filter(
-      (place) => getPlaceDistrict(place) === district,
-    );
-  };
-
-  async function fetchPlaces(latitude, longitude, category = activeCategory) {
-    try {
-      setPlaceLoadError("");
-
-      if (category === "폐의약품") {
-        alert("폐의약품 수거함은 준비 중입니다.");
+  async function getDistrictFromCoordinates(latitude, longitude) {
+    return new Promise((resolve) => {
+      if (!window.kakao?.maps?.services) {
+        resolve("");
         return;
       }
+
+      const geocoder = new window.kakao.maps.services.Geocoder();
+
+      geocoder.coord2RegionCode(longitude, latitude, (result, status) => {
+        if (
+          status !== window.kakao.maps.services.Status.OK ||
+          !result?.length
+        ) {
+          resolve("");
+          return;
+        }
+
+        const region =
+          result.find((item) => item.region_type === "B") || result[0];
+
+        resolve(region?.region_2depth_name || "");
+      });
+    });
+  }
+
+  async function fetchPlaces(
+    latitude,
+    longitude,
+    category = activeCategory,
+    district = currentDistrict,
+  ) {
+    let requestId = 0;
+
+    try {
+      setPlaceLoadError("");
+      resetPlaceState();
+      requestId = placeRequestIdRef.current;
 
       const type = CATEGORY_TYPE_MAP[category];
       if (!type) return;
 
-      console.log("[MapPage] fetchPlaces 호출:", {
-        latitude,
-        longitude,
-        category,
-        type,
-      });
+      const data = normalizePlacesResponse(
+        await getPlaces({
+          type,
+          latitude,
+          longitude,
+          district,
+        }),
+      ).map((place) => ({
+        ...place,
+        placeType: place.placeType || type,
+      }));
 
-      const data = normalizePlacesResponse(await getPlaces(type));
-      console.log("==========");
-      console.log("카테고리:", category);
-      console.log("전체 데이터 수:", data.length);
-      console.log("샘플 데이터:", data.slice(0, 3));
+      if (requestId !== placeRequestIdRef.current) return;
 
-      console.log(
-        "관악 포함 데이터:",
-        data
-          .filter((item) => JSON.stringify(item).includes("관악"))
-          .slice(0, 5),
-      );
-      const district = await getCurrentDistrict(latitude, longitude);
-      const districtPlaces = await getPlacesInDistrict(data, district);
-      console.log("관악 필터 샘플:", districtPlaces.slice(0, 5));
-
-      console.log(
-        "좌표 확인:",
-        districtPlaces.slice(0, 5).map((p) => ({
-          name: p.name,
-          latitude: p.latitude,
-          longitude: p.longitude,
-          latParsed: getPlaceLatitude(p),
-          lonParsed: getPlaceLongitude(p),
-        })),
-      );
-
-      const sortedPlaces = getPlacesByDistance(districtPlaces, {
+      const sortedPlaces = getPlacesByDistance(data, {
         latitude,
         longitude,
       });
       const topPlaces = sortedPlaces.slice(0, 3);
 
-      console.log("[MapPage] 장소 데이터 확인:", {
-        getPlacesCount: data.length,
-        district,
-        districtFilteredCount: districtPlaces.length,
-        distanceSortableCount: sortedPlaces.length,
-        topPlacesCount: topPlaces.length,
-      });
+      const detectedDistrict =
+        district ||
+        data.find((place) => place.district)?.district ||
+        data.map(getPlaceDistrict).find(Boolean) ||
+        "";
 
-      setCurrentDistrict(district);
+      setCurrentDistrict(detectedDistrict);
       setPlaces(topPlaces);
       setSelectedPlace(null);
       setSelectedPlaceId(null);
+      markerPlacesRef.current = sortedPlaces;
 
       if (sortedPlaces.length === 0) {
-        clearMarkers();
+        resetPlaceState();
         return;
       }
 
-      markerPlacesRef.current = sortedPlaces;
-
       addPlaceMarkers(sortedPlaces, null);
     } catch (error) {
+      if (requestId !== placeRequestIdRef.current) return;
+
       console.error("장소 조회 실패:", error);
-      setPlaces([]);
-      setSelectedPlace(null);
-      setSelectedPlaceId(null);
-      clearMarkers();
+      resetPlaceState();
       setPlaceLoadError("장소 정보를 불러오지 못했습니다.");
     }
   }
 
-  async function fetchBookmarkedPlaces(latitude, longitude) {
+  function fetchBookmarkedPlaces(latitude, longitude) {
     setPlaceLoadError("");
+    resetPlaceState();
 
-    const district = await getCurrentDistrict(latitude, longitude);
-    const districtBookmarks = await getPlacesInDistrict(bookmarks, district);
-    const sortedBookmarks = getPlacesByDistance(districtBookmarks, {
+    const savedBookmarks = getSavedBookmarks();
+    setBookmarks(savedBookmarks);
+
+    const sortedBookmarks = getPlacesByDistance(savedBookmarks, {
       latitude,
       longitude,
     });
-    const topBookmarks = sortedBookmarks.slice(0, 3);
 
-    setCurrentDistrict(district);
-    setPlaces(topBookmarks);
+    clearMarkers();
+    markerPlacesRef.current = sortedBookmarks;
+
+    setCurrentDistrict("");
+    setPlaces(sortedBookmarks);
     setSelectedPlace(null);
     setSelectedPlaceId(null);
 
-    if (topBookmarks.length === 0) {
-      clearMarkers();
+    if (sortedBookmarks.length === 0) {
+      resetPlaceState();
       return;
     }
 
-    addPlaceMarkers(topBookmarks, null);
+    addPlaceMarkers(sortedBookmarks, null);
   }
 
   const resetPlacesForLocationOff = () => {
@@ -732,8 +667,7 @@ const MapPage = () => {
     setCurrentPosition(DEFAULT_POSITION);
     setCurrentDistrict(DEFAULT_DISTRICT);
     setPlaceLoadError("");
-    setSelectedPlace(null);
-    setSelectedPlaceId(null);
+    resetPlaceState();
 
     if (activeCategory === "북마크") {
       fetchBookmarkedPlaces(
@@ -747,6 +681,7 @@ const MapPage = () => {
       DEFAULT_POSITION.latitude,
       DEFAULT_POSITION.longitude,
       activeCategory,
+      DEFAULT_DISTRICT,
     );
   };
 
@@ -786,9 +721,44 @@ const MapPage = () => {
 
     setLocationEnabled(true);
     setIsSearchMode(false);
+    setKeyword("");
+
+    const cachedPosition = lastGpsPositionRef.current;
+    const cachedDistrict = lastGpsDistrictRef.current;
+
+    if (cachedPosition) {
+      resetPlaceState();
+      setIsOpen(true);
+      setSheetHeight(DEFAULT_SHEET_HEIGHT);
+      setCurrentPosition(cachedPosition);
+      setCurrentDistrict(cachedDistrict);
+
+      const cachedMovePosition = new window.kakao.maps.LatLng(
+        cachedPosition.latitude,
+        cachedPosition.longitude,
+      );
+
+      mapInstanceRef.current.setCenter(cachedMovePosition);
+      mapInstanceRef.current.setLevel(4);
+
+      if (activeCategory === "북마크") {
+        fetchBookmarkedPlaces(cachedPosition.latitude, cachedPosition.longitude);
+      } else {
+        fetchPlaces(
+          cachedPosition.latitude,
+          cachedPosition.longitude,
+          activeCategory,
+          cachedDistrict,
+        );
+      }
+    }
 
     navigator.geolocation.getCurrentPosition(
-      (position) => {
+      async (position) => {
+        resetPlaceState();
+        setIsOpen(true);
+        setSheetHeight(DEFAULT_SHEET_HEIGHT);
+
         const nextPosition = {
           latitude: position.coords.latitude,
           longitude: position.coords.longitude,
@@ -801,38 +771,88 @@ const MapPage = () => {
           nextPosition.longitude,
         );
 
-        mapInstanceRef.current.panTo(movePosition);
+        mapInstanceRef.current.setCenter(movePosition);
+        mapInstanceRef.current.setLevel(4);
 
-        setTimeout(() => {
-          mapInstanceRef.current.setLevel(4);
-        }, 300);
+        const district = await getDistrictFromCoordinates(
+          nextPosition.latitude,
+          nextPosition.longitude,
+        );
+
+        lastGpsPositionRef.current = nextPosition;
+        lastGpsDistrictRef.current = district;
+
+        setCurrentDistrict(district);
 
         if (activeCategory === "북마크") {
           fetchBookmarkedPlaces(nextPosition.latitude, nextPosition.longitude);
           return;
         }
 
-        fetchPlaces(nextPosition.latitude, nextPosition.longitude);
+        fetchPlaces(
+          nextPosition.latitude,
+          nextPosition.longitude,
+          activeCategory,
+          district,
+        );
       },
       () => {
         alert("현재 위치를 가져올 수 없습니다.");
+      },
+      {
+        enableHighAccuracy: false,
+        maximumAge: Infinity,
+        timeout: 3000,
       },
     );
   };
 
   const toggleBookmark = (place) => {
-    const isAlreadyBookmarked = bookmarks.some((item) => item.id === place.id);
+    const placeKey = getBookmarkKey(place);
+    const isAlreadyBookmarked = bookmarks.some(
+      (item) => getBookmarkKey(item) === placeKey,
+    );
+    const placeWithCategory = {
+      ...place,
+      bookmarkedCategory: place.bookmarkedCategory || activeCategory,
+      placeType: getPlaceType(place, activeCategory),
+    };
 
     const nextBookmarks = isAlreadyBookmarked
-      ? bookmarks.filter((item) => item.id !== place.id)
-      : [...bookmarks, place];
+      ? bookmarks.filter((item) => getBookmarkKey(item) !== placeKey)
+      : [...bookmarks, placeWithCategory];
 
     setBookmarks(nextBookmarks);
     localStorage.setItem("bookmarkedPlaces", JSON.stringify(nextBookmarks));
+
+    if (activeCategory === "북마크") {
+      const sortedBookmarks = getPlacesByDistance(nextBookmarks, {
+        latitude: currentPosition.latitude,
+        longitude: currentPosition.longitude,
+      });
+
+      clearMarkers();
+      markerPlacesRef.current = sortedBookmarks;
+
+      setCurrentDistrict("");
+      setPlaces(sortedBookmarks);
+      setSelectedPlace(null);
+      setSelectedPlaceId(null);
+
+      if (sortedBookmarks.length === 0) {
+        clearMarkers();
+        markerPlacesRef.current = [];
+        return;
+      }
+
+      addPlaceMarkers(sortedBookmarks, null);
+    }
   };
 
-  const isBookmarked = (placeId) => {
-    return bookmarks.some((item) => item.id === placeId);
+  const isBookmarked = (place) => {
+    const placeKey = getBookmarkKey(place);
+
+    return bookmarks.some((item) => getBookmarkKey(item) === placeKey);
   };
 
   useEffect(() => {
@@ -848,7 +868,7 @@ const MapPage = () => {
 
     const loadMap = () => {
       window.kakao.maps.load(() => {
-        const createMap = (positionData, shouldFetchPlaces = true) => {
+        const createMap = async (positionData, shouldFetchPlaces = true) => {
           const center = new window.kakao.maps.LatLng(
             positionData.latitude,
             positionData.longitude,
@@ -863,7 +883,20 @@ const MapPage = () => {
           setCurrentPosition(positionData);
 
           if (shouldFetchPlaces) {
-            fetchPlaces(positionData.latitude, positionData.longitude);
+            const district = await getDistrictFromCoordinates(
+              positionData.latitude,
+              positionData.longitude,
+            );
+
+            lastGpsDistrictRef.current = district;
+            setCurrentDistrict(district);
+
+            fetchPlaces(
+              positionData.latitude,
+              positionData.longitude,
+              activeCategory,
+              district,
+            );
           }
         };
 
@@ -885,6 +918,7 @@ const MapPage = () => {
               longitude: position.coords.longitude,
             };
 
+            lastGpsPositionRef.current = positionData;
             createMap(positionData);
           },
           () => {
@@ -926,6 +960,9 @@ const MapPage = () => {
 
   const handleCategoryClick = async (category) => {
     setActiveCategory(category);
+    setIsOpen(true);
+    setSheetHeight(DEFAULT_SHEET_HEIGHT);
+    resetPlaceState();
 
     if (!isLocationAllowed() && !isSearchMode) {
       setLocationEnabled(false);
@@ -942,6 +979,7 @@ const MapPage = () => {
         DEFAULT_POSITION.latitude,
         DEFAULT_POSITION.longitude,
         category,
+        DEFAULT_DISTRICT,
       );
       return;
     }
@@ -956,23 +994,12 @@ const MapPage = () => {
       return;
     }
 
-    fetchPlaces(currentPosition.latitude, currentPosition.longitude, category);
-  };
-
-  const moveToPlace = (place, shouldCollapseSheet = false) => {
-    setSelectedPlace(place);
-    setSelectedPlaceId(place.id);
-    setIsOpen(!shouldCollapseSheet);
-    addPlaceMarkers(markerPlacesRef.current, place.id);
-
-    if (!mapInstanceRef.current || !window.kakao) return;
-
-    const movePosition = new window.kakao.maps.LatLng(
-      place.latitude,
-      place.longitude,
+    fetchPlaces(
+      currentPosition.latitude,
+      currentPosition.longitude,
+      category,
+      currentDistrict,
     );
-
-    mapInstanceRef.current.panTo(movePosition);
   };
 
   const handleDragStart = (e) => {
@@ -994,7 +1021,7 @@ const MapPage = () => {
   };
 
   const handleDragEnd = () => {
-    if (sheetHeight < 220) {
+    if (sheetHeight < 220 && places.length > 0) {
       setIsOpen(false);
     }
 
@@ -1009,11 +1036,21 @@ const MapPage = () => {
 
     ps.keywordSearch(keyword, async (data, status) => {
       if (status === window.kakao.maps.services.Status.OK) {
+        resetPlaceState();
+        setIsOpen(true);
+        setSheetHeight(DEFAULT_SHEET_HEIGHT);
+
         const place = data[0];
         const searchedPosition = {
           latitude: Number(place.y),
           longitude: Number(place.x),
         };
+        const searchedDistrict =
+          getPlaceDistrict({
+            address: place.address_name,
+            roadAddress: place.road_address_name,
+            name: place.place_name,
+          }) || "";
 
         const movePosition = new window.kakao.maps.LatLng(
           searchedPosition.latitude,
@@ -1023,11 +1060,9 @@ const MapPage = () => {
         setLocationEnabled(true);
         setIsSearchMode(true);
         setCurrentPosition(searchedPosition);
+        setCurrentDistrict(searchedDistrict);
         mapInstanceRef.current.panTo(movePosition);
-
-        setTimeout(() => {
-          mapInstanceRef.current.setLevel(4);
-        }, 300);
+        mapInstanceRef.current.setLevel(4);
 
         if (activeCategory === "북마크") {
           await fetchBookmarkedPlaces(
@@ -1041,6 +1076,7 @@ const MapPage = () => {
           searchedPosition.latitude,
           searchedPosition.longitude,
           activeCategory,
+          searchedDistrict,
         );
       } else {
         alert("검색 결과가 없습니다.");
@@ -1096,7 +1132,7 @@ const MapPage = () => {
           <SheetTitle>
             <div>
               {activeCategory === "북마크" ? (
-                "북마크한 장소"
+                `북마크한 장소 (${bookmarks.length})`
               ) : (
                 <>
                   근처 {activeCategory} <GreenText>TOP3</GreenText>
@@ -1106,51 +1142,55 @@ const MapPage = () => {
           </SheetTitle>
 
           {places.length > 0 ? (
-            places.map((place) => (
-              <PlaceCard
-                key={place.id}
-                $selected={selectedPlaceId === place.id}
-                onClick={() => moveToPlace(place)}
-              >
-                <Thumbnail>
-                  <img
-                    src={getCategoryImage(activeCategory)}
-                    alt={activeCategory}
-                  />
-                </Thumbnail>
+            places.map((place) => {
+              const displayCategory = getDisplayCategory(place, activeCategory);
 
-                <PlaceInfo>
-                  <PlaceName $selected={selectedPlaceId === place.id}>
-                    {getPlaceDistrict(place)
-                      ? `${getPlaceDistrict(place)} ${activeCategory}`
-                      : place.name || activeCategory}
-                  </PlaceName>
-                  {selectedPlaceId === place.id && (
-                    <SelectedBadge>현재 선택된 장소</SelectedBadge>
-                  )}
-
-                  <PlaceDesc>
-                    {place.distance && (
-                      <>
-                        현재 위치에서 <Distance>{place.distance}</Distance>
-                        <br />
-                      </>
-                    )}
-                    {place.address || place.name || "위치 정보가 없습니다."}
-                  </PlaceDesc>
-                </PlaceInfo>
-
-                <BookmarkButton
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleBookmark(place);
-                  }}
+              return (
+                <PlaceCard
+                  key={getBookmarkKey(place)}
+                  $selected={selectedPlaceId === place.id}
+                  onClick={() => moveToPlace(place)}
                 >
-                  {isBookmarked(place.id) ? "★" : "☆"}
-                </BookmarkButton>
-              </PlaceCard>
-            ))
+                  <Thumbnail>
+                    <img
+                      src={getPlaceImage(place, activeCategory)}
+                      alt={displayCategory}
+                    />
+                  </Thumbnail>
+
+                  <PlaceInfo>
+                    <PlaceName $selected={selectedPlaceId === place.id}>
+                      {getPlaceDistrict(place)
+                        ? `${getPlaceDistrict(place)} ${displayCategory}`
+                        : place.name || displayCategory}
+                    </PlaceName>
+                    {selectedPlaceId === place.id && (
+                      <SelectedBadge>현재 선택된 장소</SelectedBadge>
+                    )}
+
+                    <PlaceDesc>
+                      {place.distance && (
+                        <>
+                          현재 위치에서 <Distance>{place.distance}</Distance>
+                          <br />
+                        </>
+                      )}
+                      {place.address || place.name || "위치 정보가 없습니다."}
+                    </PlaceDesc>
+                  </PlaceInfo>
+
+                  <BookmarkButton
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleBookmark(place);
+                    }}
+                  >
+                    {isBookmarked(place) ? "★" : "☆"}
+                  </BookmarkButton>
+                </PlaceCard>
+              );
+            })
           ) : (
             <>
               <EmptyText>
@@ -1161,8 +1201,10 @@ const MapPage = () => {
                     : !locationEnabled
                       ? "마이페이지에서 위치 정보 허용을 켜주세요."
                       : currentDistrict
-                        ? `현재 위치한 ${currentDistrict}에는 정보를 제공하지 않습니다.`
-                        : "현재 위치한 구 정보를 확인하지 못했습니다."}
+                        ? isSearchMode
+                          ? `${currentDistrict}에는 정보를 제공하지 않습니다.`
+                          : `현재 위치한 ${currentDistrict}에는 정보를 제공하지 않습니다.`
+                        : "현재 위치한 구의 정보는 제공되지 않습니다."}
               </EmptyText>
               {locationEnabled && activeCategory !== "북마크" && (
                 <ReportButton onClick={() => navigate("/report-location")}>
@@ -1187,8 +1229,8 @@ const MapPage = () => {
             <FloatingCard onClick={() => setIsOpen(true)}>
               <Thumbnail>
                 <img
-                  src={getCategoryImage(activeCategory)}
-                  alt={activeCategory}
+                  src={getPlaceImage(selectedPlace, activeCategory)}
+                  alt={getDisplayCategory(selectedPlace, activeCategory)}
                 />
               </Thumbnail>
               <PlaceInfo>
@@ -1212,7 +1254,7 @@ const MapPage = () => {
                   toggleBookmark(selectedPlace);
                 }}
               >
-                {isBookmarked(selectedPlace.id) ? "★" : "☆"}
+                {isBookmarked(selectedPlace) ? "★" : "☆"}
               </BookmarkButton>
             </FloatingCard>
           )}

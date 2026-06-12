@@ -143,15 +143,56 @@ const BottomButton = styled.button`
 `;
 
 const QUESTIONS = [
-  "바닥에 내려놓으면 모양이 그대로 유지되나요?",
-  "바닥에 떨어뜨리면 깨질 가능성이 있나요?",
-  "손으로 눌렀을 때 모양이 변하나요?",
-];
-
-const answerOptions = [
-  { id: "yes", text: "맞아요" },
-  { id: "no", text: "아니에요" },
-  { id: "unknown", text: "잘 모르겠어요" },
+  {
+    type: "오류 유형",
+    question: "분석 결과에서 어떤 부분이 이상했나요?",
+    options: [
+      { id: "wrong_item", text: "물건 종류가 틀렸어요" },
+      { id: "wrong_material", text: "재질이 틀렸어요" },
+      { id: "wrong_disposal", text: "배출 방법이 이상해요" },
+      { id: "mostly_wrong", text: "전체적으로 이상해요" },
+    ],
+  },
+  {
+    type: "물건 용도",
+    question: "이 물건은 주로 어떤 용도로 사용되나요?",
+    options: [
+      { id: "drink_food", text: "음식/음료 용기" },
+      { id: "packaging", text: "포장재" },
+      { id: "paper_item", text: "종이 제품" },
+      { id: "electronic", text: "전자기기 또는 부품" },
+      { id: "medicine", text: "의약품 관련" },
+      { id: "daily_item", text: "생활용품" },
+      { id: "unknown", text: "잘 모르겠어요" },
+    ],
+  },
+  {
+    type: "재질 특징",
+    question: "가장 많이 보이는 재질은 무엇인가요?",
+    options: [
+      { id: "hard_plastic", text: "단단한 플라스틱" },
+      { id: "soft_pet", text: "투명하고 눌리는 플라스틱" },
+      { id: "vinyl", text: "비닐처럼 얇고 말랑함" },
+      { id: "paper", text: "종이 또는 종이팩" },
+      { id: "metal", text: "금속 재질" },
+      { id: "glass", text: "유리 재질" },
+      { id: "styrofoam", text: "스티로폼" },
+      { id: "mixed", text: "여러 재질이 섞여 있음" },
+      { id: "unknown", text: "잘 모르겠어요" },
+    ],
+  },
+  {
+    type: "현재 상태",
+    question: "현재 물건 상태는 어떤가요?",
+    options: [
+      { id: "clean", text: "깨끗함" },
+      { id: "dirty", text: "오염물 있음" },
+      { id: "label_cap", text: "라벨 또는 뚜껑이 붙어 있음" },
+      { id: "broken", text: "깨지거나 부서짐" },
+      { id: "battery_inside", text: "배터리/전자부품 포함" },
+      { id: "unknown", text: "잘 모르겠어요" },
+    ],
+  },
 ];
 
 const AdditionalQuestion = () => {
@@ -169,11 +210,16 @@ const AdditionalQuestion = () => {
   const handleConfirm = () => {
     if (selected === null) return;
 
+    const selectedOption = currentQuestion.options.find(
+      (option) => option.id === selected,
+    );
     const nextAnswers = [
       ...answers,
       {
-        question: currentQuestion,
+        type: currentQuestion.type,
+        question: currentQuestion.question,
         answer: selected,
+        answerText: selectedOption?.text || "",
       },
     ];
 
@@ -184,8 +230,10 @@ const AdditionalQuestion = () => {
         state: {
           mode: "reanalyze",
           result: location.state?.result,
+          file: location.state?.file,
           capturedImage: location.state?.capturedImage,
           additionalAnswers: nextAnswers,
+          questionType: location.state?.questionType,
         },
       });
       return;
@@ -213,14 +261,14 @@ const AdditionalQuestion = () => {
           {currentIndex + 1}/{QUESTIONS.length}
         </QuestionType>
 
-        <QuestionTitle>{currentQuestion}</QuestionTitle>
+        <QuestionTitle>{currentQuestion.question}</QuestionTitle>
 
         <QuestionSub>
           더 정확한 분석을 위해 물건의 특징을 선택해주세요.
         </QuestionSub>
 
         <OptionList>
-          {answerOptions.map((option) => (
+          {currentQuestion.options.map((option) => (
             <Option
               key={option.id}
               $isSelected={selected === option.id}

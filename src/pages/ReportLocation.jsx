@@ -118,6 +118,27 @@ const SearchButton = styled.button`
   cursor: pointer;
 `
 
+const DetailAddressInput = styled.input`
+  width: 100%;
+  margin-top: 10px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #E0E0E0;
+  font-family: 'Paperlogy';
+  font-size: 14px;
+  outline: none;
+  background: #fff;
+  box-sizing: border-box;
+
+  &::placeholder {
+    color: #b8b8b8;
+  }
+
+  &:focus {
+    border-color: #53B175;
+  }
+`
+
 const SearchResultBox = styled.div`
   margin-top: 8px;
   border: 1px solid #E0E0E0;
@@ -203,6 +224,7 @@ const ReportLocation = () => {
     const mapRef = useRef(null)
     const [selectedCategory, setSelectedCategory] = useState(null)
     const [address, setAddress] = useState("")
+    const [detailAddress, setDetailAddress] = useState("")
     const [memo, setMemo] = useState("")
     const [searchedPlace, setSearchedPlace] = useState(null)
     const [searchResults, setSearchResults] = useState([])
@@ -259,11 +281,12 @@ const ReportLocation = () => {
     }
 
     const handleSubmit = () => {
-        if (!selectedCategory || !address) return
+        if (!selectedCategory || !address || !detailAddress.trim()) return
 
         const reportData = {
             category: selectedCategory,
             address,
+            detailAddress,
             memo,
             latitude: searchedPlace?.latitude || null,
             longitude: searchedPlace?.longitude || null,
@@ -317,6 +340,11 @@ const ReportLocation = () => {
                         {"\uac80\uc0c9"}
                     </SearchButton>
                 </AddressBox>
+                <DetailAddressInput
+                    placeholder={"\uc0c1\uc138 \uc8fc\uc18c\ub97c \uc785\ub825\ud574\uc8fc\uc138\uc694"}
+                    value={detailAddress}
+                    onChange={(e) => setDetailAddress(e.target.value)}
+                />
                 {searchResults.length > 0 && (
                     <SearchResultBox>
                         {searchResults.slice(0, 5).map((place) => (
@@ -359,7 +387,7 @@ const ReportLocation = () => {
             </Section>
 
             <SubmitButton
-                disabled={!selectedCategory || !address}
+                disabled={!selectedCategory || !address || !detailAddress.trim()}
                 onClick={handleSubmit}
             >
                 {"\uc81c\ubcf4\ud558\uae30"}

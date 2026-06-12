@@ -235,6 +235,39 @@ const ChartWrapper = styled.div`
   justify-content: center;
   overflow: hidden;
 `;
+
+const ChartEmptyBox = styled.div`
+  width: 100%;
+  min-height: 200px;
+  border-radius: 16px;
+  background: #f6fbf8;
+  border: 1px solid #e4f2e9;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-sizing: border-box;
+`;
+
+const ChartEmptyImg = styled.img`
+  width: 92px;
+  height: auto;
+`;
+
+const ChartEmptyText = styled.p`
+  font-family: "Paperlogy";
+  font-size: 14px;
+  font-weight: 700;
+  color: #272727;
+`;
+
+const ChartEmptySubText = styled.p`
+  font-family: "Paperlogy";
+  font-size: 12px;
+  color: #959595;
+`;
+
 const ToggleButton = styled.button`
   width: 100%;
   background: none;
@@ -246,7 +279,8 @@ const ToggleButton = styled.button`
   text-align: center;
 `;
 
-const COLORS = ["#53b175", "#3d8f5f", "#2d6e47", "#7bc89a"];
+const COLORS = ["#53b175", "#3d8f5f", "#2d6e47", "#7bc89a", "#5a5a5a"];
+const EMPTY_BAR_COLOR = "#e7eee9";
 const SPRING_API_BASE = getRequiredEnv("VITE_SPRING_API_BASE_URL");
 
 const monthList = [
@@ -322,8 +356,12 @@ const Activity = () => {
   const calendarDays = getCalendarDays(selectedYear, selectedMonth);
   const selectedWeek = getWeekText(selectedYear, selectedMonth, selectedDay);
 
-  const activityDays = records.map((record) =>
-    new Date(record.analyzedAt).getDate(),
+  const activityDates = new Set(
+    records.map((record) => {
+      const recordDate = new Date(record.analyzedAt);
+
+      return `${recordDate.getFullYear()}-${recordDate.getMonth()}-${recordDate.getDate()}`;
+    }),
   );
 
   const selectedDateRecords = records.filter((record) => {
@@ -341,6 +379,13 @@ const Activity = () => {
       name: item.category,
       value: item.count,
     })) ?? [];
+  const hasChartData = chartData.some((item) => item.value > 0);
+  const maxChartValue = Math.max(...chartData.map((item) => item.value), 0);
+  const emptyBarValue = maxChartValue > 0 ? Math.max(maxChartValue * 0.08, 0.2) : 0;
+  const displayChartData = chartData.map((item) => ({
+    ...item,
+    displayValue: item.value > 0 ? item.value : emptyBarValue,
+  }));
 
   const hasActivity = selectedDateRecords.length > 0;
 
@@ -445,7 +490,8 @@ const Activity = () => {
               const isActive = date.day === selectedDay && date.isCurrentMonth;
 
               const hasDot =
-                activityDays.includes(date.day) && date.isCurrentMonth;
+                date.isCurrentMonth &&
+                activityDates.has(`${selectedYear}-${selectedMonth}-${date.day}`);
 
               return (
                 <DayCell
@@ -525,44 +571,72 @@ const Activity = () => {
           실천했어요!
         </StatsTitle>
 
-        <ChartWrapper>
-          <BarChart
-            width={340}
-            height={200}
-            data={chartData}
-            barSize={44}
-            margin={{ top: 10, right: 0, left: 0, bottom: 0 }}
-          >
-            <XAxis
-              dataKey="name"
-              axisLine={false}
-              tickLine={false}
-              tick={{
-                fontFamily: "Paperlogy",
-                fontSize: 12,
-                fontWeight: 600,
-                fill: "#272727",
-              }}
-            />
-            <YAxis hide />
-            <Bar
-              dataKey="value"
-              radius={[6, 6, 0, 0]}
-              label={{
-                position: "insideBottom",
-                fill: "white",
-                fontFamily: "Paperlogy",
-                fontSize: 14,
-                fontWeight: 600,
-                offset: 10,
-              }}
+        {hasChartData ? (
+          <ChartWrapper>
+            <BarChart
+              width={340}
+              height={200}
+              data={displayChartData}
+              barSize={44}
+              margin={{ top: 10, right: 0, left: 0, bottom: 0 }}
             >
-              {chartData.map((entry, index) => (
-                <Cell key={index} fill={COLORS[index]} />
-              ))}
-            </Bar>
-          </BarChart>
-        </ChartWrapper>
+              <XAxis
+                dataKey="name"
+                axisLine={false}
+                tickLine={false}
+                tick={{
+                  fontFamily: "Paperlogy",
+                  fontSize: 12,
+                  fontWeight: 600,
+                  fill: "#272727",
+                }}
+              />
+              <YAxis hide />
+              <Bar
+                dataKey="displayValue"
+                radius={[6, 6, 0, 0]}
+                label={({ x, y, width, height, index }) => {
+                  const item = displayChartData[index];
+
+                  if (!item?.value) return null;
+
+                  return (
+                    <text
+                      x={x + width / 2}
+                      y={y + height - 12}
+                      textAnchor="middle"
+                      fill="white"
+                      fontFamily="Paperlogy"
+                      fontSize={14}
+                      fontWeight={600}
+                    >
+                      {item.value}
+                    </text>
+                  );
+                }}
+              >
+                {displayChartData.map((entry, index) => (
+                  <Cell
+                    key={index}
+                    fill={
+                      entry.value > 0
+                        ? COLORS[index % COLORS.length]
+                        : EMPTY_BAR_COLOR
+                    }
+                  />
+                ))}
+              </Bar>
+            </BarChart>
+          </ChartWrapper>
+        ) : (
+          <ChartEmptyBox>
+            <ChartEmptyImg src={BiumAct} alt="비움 캐릭터" />
+            <ChartEmptyText>아직 재활용 통계가 없어요</ChartEmptyText>
+            <ChartEmptySubText>
+              분리배출을 분석하면 이곳에 막대그래프가 생겨요
+            </ChartEmptySubText>
+          </ChartEmptyBox>
+        )}
       </StatsSection>
 
       <BottomNavComponent />

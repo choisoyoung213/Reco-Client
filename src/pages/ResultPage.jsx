@@ -25,8 +25,7 @@ const ResultPage = () => {
   const autoSaveAttemptedRef = useRef(false);
 
   // 📍 더미 데이터 제거 및 백엔드 라우팅 데이터 구조 완전 정착
-  const { result, capturedImage } = location.state || {};
-  console.log("결과 데이터", result);
+  const { result, capturedImage, file } = location.state || {};
 
   // 데이터가 없을 경우 비정상 접근이므로 이전 페이지로 튕겨버리는 방어 코드 추가
   useEffect(() => {
@@ -37,6 +36,14 @@ const ResultPage = () => {
   }, [result, navigate]);
 
   if (!result) return null;
+
+  const resultTitle =
+    result.itemName ||
+    result.item ||
+    result.waste_type_ko ||
+    result.primaryMaterial ||
+    result.primary_material ||
+    "분석 결과";
 
   const getContaminationIcon = (status) => {
     switch (status) {
@@ -177,6 +184,11 @@ const getMaterialPercent = (item) =>
       item.ratio,
   );
 
+  const hasMaterialProbabilityData = (value) =>
+    Array.isArray(value)
+      ? value.length > 0
+      : value && typeof value === "object";
+
   // 📝 백엔드 응답 규격 파싱 함수: 문자열/배열/객체 모두 대응
   const parseMaterialProbabilities = (value) => {
     if (!value) return [];
@@ -227,19 +239,18 @@ const getMaterialPercent = (item) =>
   };
 
   const rawMaterialData = parseMaterialProbabilities(
-  result.materialProbabilities?.length > 0
-    ? result.materialProbabilities
-    : result.summary?.length > 0
-      ? result.summary
-      : result.detail?.length > 0
-        ? result.detail
-        : [
-            {
-              label: result.primaryMaterial || result.primary_material,
-              percent: result.confidence || 100,
-            },
-          ]
-);
+    hasMaterialProbabilityData(result.materialProbabilities)
+      ? result.materialProbabilities
+      : [
+          {
+            label:
+              result.primaryMaterial ||
+              result.primary_material ||
+              resultTitle,
+            percent: result.confidence || 100,
+          },
+        ],
+  );
   
   // 1. 높은 확률순 내림차순 정렬
   let sortedMaterialData = [...rawMaterialData].sort((a, b) => b.percent - a.percent);
@@ -279,10 +290,10 @@ const getMaterialPercent = (item) =>
   return (
     <Container>
       <Header>
-        <BackBtn onClick={() => navigate(-1)}>
+        <BackBtn onClick={() => navigate("/")}>
           <BackIconImg src={BackIcon} alt="Back" />
         </BackBtn>
-        <Title>{result.itemName || result.item}</Title>
+        <Title>{resultTitle}</Title>
       </Header>
 
       <VisualSection>
@@ -317,7 +328,8 @@ const getMaterialPercent = (item) =>
               const dotColor = colorPalette[index] || "#D3D3D3";
               return (
                 <LegendItem key={index}>
-                  <Dot color={dotColor} /> {item.label}
+                  <Dot color={dotColor} /> {item.label} (
+                  {Math.round(item.percent)}%)
                 </LegendItem>
               );
             })}
@@ -338,7 +350,7 @@ const getMaterialPercent = (item) =>
       </AnalysisCard>
 
       <GuideCard>
-        <GuideHeader>{result.itemName || result.item}은 이렇게 버려요.</GuideHeader>
+        <GuideHeader>{resultTitle}은 이렇게 버려요.</GuideHeader>
         <GuideList>
           {disposalSteps.length > 0 ? (
             disposalSteps.map((step, index) => (
@@ -363,8 +375,9 @@ const getMaterialPercent = (item) =>
             navigate("/additional-question", {
               state: {
                 result,
+                file,
                 capturedImage,
-                questionType: "vinyl_plastic",
+                questionType: result?.questionType || "general_reanalysis",
               },
             })
           }

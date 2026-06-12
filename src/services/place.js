@@ -1,13 +1,25 @@
-import { getRequiredEnv } from "../config/env"
+import { getRequiredEnv } from "../config/env";
 
-const API_BASE = getRequiredEnv("VITE_SPRING_API_BASE_URL")
+const API_BASE_URL = getRequiredEnv("VITE_SPRING_API_BASE_URL");
 
-export const getPlaces = async (type) => {
-  const res = await fetch(`${API_BASE}/api/v1/places?type=${type}`)
+export const getPlaces = async ({ type, latitude, longitude, district }) => {
+  const params = new URLSearchParams({
+    type,
+    latitude: String(latitude),
+    longitude: String(longitude),
+  });
 
-  if (!res.ok) {
-    throw new Error("장소 데이터를 불러오지 못했습니다.")
+  if (district) {
+    params.append("district", district);
   }
 
-  return res.json()
-}
+  const response = await fetch(
+    `${API_BASE_URL}/api/v1/places/nearby?${params}`
+  );
+
+  if (!response.ok) {
+    throw new Error("장소 정보를 불러오지 못했습니다.");
+  }
+
+  return response.json();
+};

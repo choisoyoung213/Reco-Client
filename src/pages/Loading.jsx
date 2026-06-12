@@ -1,6 +1,6 @@
 import styled from "styled-components"
 import bium from "../assets/loading.gif"
-import { useEffect } from "react"
+import { useEffect, useRef } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
 import { getRequiredEnv } from "../config/env"
 
@@ -47,7 +47,17 @@ const BackButton = styled.button`
   left: 24px;
 `
 
-const FASTAPI_BASE = getRequiredEnv("VITE_API_BASE_URL")
+const getFastApiBase = () => {
+  const base = getRequiredEnv("VITE_API_BASE_URL")
+
+  if (import.meta.env.DEV && /^https?:\/\/localhost:8000\/?$/.test(base)) {
+    return ""
+  }
+
+  return base
+}
+
+const FASTAPI_BASE = getFastApiBase()
 
 const normalizePercent = (value) => {
   const num = Number(value)
@@ -61,84 +71,161 @@ const normalizePercent = (value) => {
   return Math.round(num)
 }
 
-const normalizeResult = (data) => {
-  const steps = data.disposal_steps || data.disposalSteps || []
+const getResultSource = (data) => data.result || data.data || data.analysis || data
 
-  const materialProbabilities =
-    data.materialProbabilities?.length > 0
-      ? data.materialProbabilities
-      : data.material_probabilities?.length > 0
-      ? data.material_probabilities
-      : data.materials?.length > 0
-      ? data.materials
-      : data.predictions?.length > 0
-      ? data.predictions
-      : data.summary?.length > 0
-      ? data.summary
-      : data.detail?.length > 0
-      ? data.detail
-      : [
-          {
-            label:
-              data.primary_material ||
-              data.material ||
-              "분석 결과",
-            percent: normalizePercent(data.confidence || 100),
-          },
-        ]
+const hasProbabilityItems = (value) =>
+  Array.isArray(value) ? value.length > 0 : value && typeof value === "object"
+
+const getMaterialProbabilities = (source, fallbackResult = {}) => {
+  if (hasProbabilityItems(source.materialProbabilities)) {
+    return source.materialProbabilities
+  }
+  if (hasProbabilityItems(source.material_probabilities)) {
+    return source.material_probabilities
+  }
+  if (hasProbabilityItems(source.materials)) {
+    return source.materials
+  }
+  if (hasProbabilityItems(source.predictions)) {
+    return source.predictions
+  }
+  if (hasProbabilityItems(source.summary)) {
+    return source.summary
+  }
+  if (hasProbabilityItems(source.detail)) {
+    return source.detail
+  }
+  if (hasProbabilityItems(fallbackResult.materialProbabilities)) {
+    return fallbackResult.materialProbabilities
+  }
+
+  return [
+    {
+      label:
+        source.primary_material ||
+        source.material ||
+        fallbackResult.primaryMaterial ||
+        fallbackResult.primary_material ||
+        "분석 결과",
+      percent: normalizePercent(
+        source.confidence ||
+          fallbackResult.confidence ||
+          100
+      ),
+    },
+  ]
+}
+
+const normalizeAnalysisResult = (data) => {
+  const source = getResultSource(data)
+  const steps = source.disposal_steps || source.disposalSteps || []
 
   return {
-    ...data,
+    ...source,
 
     itemName:
-      data.waste_type_ko ||
-      data.itemName ||
-      data.item,
+      source.waste_type_ko ||
+      source.itemName ||
+      source.item ||
+      "분석 결과",
 
     item:
-      data.waste_type_ko ||
-      data.itemName ||
-      data.item,
+      source.waste_type_ko ||
+      source.itemName ||
+      source.item ||
+      "분석 결과",
 
     primaryMaterial:
-      data.primary_material ||
-      data.material,
+      source.primary_material ||
+      source.material ||
+      "분석 결과",
 
-    materialProbabilities,
+    materialProbabilities: getMaterialProbabilities(source),
 
     aiSummary:
-      data.ai_summary ||
-      data.aiSummary,
+      source.ai_summary ||
+      source.aiSummary,
 
     disposalSteps: steps,
 
     disposalMethodSummary:
-      data.disposalMethodSummary ||
+      source.disposalMethodSummary ||
       steps.join("\n"),
 
     contaminationStatus:
-      data.contamination?.level === "clean"
+      source.contamination?.level === "clean"
         ? "good"
-        : data.contamination?.level === "low"
+        : source.contamination?.level === "low"
         ? "normal"
-        : data.contamination?.level === "high"
+        : source.contamination?.level === "high"
         ? "bad"
-        : "good",
+        : source.contaminationStatus || "good",
 
     isRecyclable:
-      data.recyclable?.possible ??
-      data.isRecyclable ??
+      source.recyclable?.possible ??
+      source.isRecyclable ??
       true,
 
-    confidence: normalizePercent(
-      data.confidence || 100
-    ),
+    confidence: normalizePercent(source.confidence || 100),
+  }
+}
+
+const normalizeReanalysisResult = (data, previousResult = {}) => {
+  const source = getResultSource(data)
+  const normalized = normalizeAnalysisResult(source)
+
+  return {
+    ...previousResult,
+    ...normalized,
+
+    itemName:
+      source.waste_type_ko ||
+      source.itemName ||
+      source.item ||
+      previousResult.itemName ||
+      previousResult.item ||
+      normalized.itemName,
+
+    item:
+      source.waste_type_ko ||
+      source.itemName ||
+      source.item ||
+      previousResult.item ||
+      previousResult.itemName ||
+      normalized.item,
+
+    primaryMaterial:
+      source.primary_material ||
+      source.material ||
+      previousResult.primaryMaterial ||
+      previousResult.primary_material ||
+      normalized.primaryMaterial,
+
+    materialProbabilities: getMaterialProbabilities(source, previousResult),
+
+    disposalSteps:
+      source.disposal_steps ||
+      source.disposalSteps ||
+      previousResult.disposalSteps ||
+      normalized.disposalSteps,
+
+    disposalMethodSummary:
+      source.disposalMethodSummary ||
+      previousResult.disposalMethodSummary ||
+      normalized.disposalMethodSummary,
+
+    aiSummary:
+      source.ai_summary ||
+      source.aiSummary ||
+      previousResult.aiSummary ||
+      normalized.aiSummary,
   }
 }
 
 const Loading = () => {
   const navigate = useNavigate()
   const location = useLocation()
+  const requestStartedRef = useRef(false)
 
   const {
     mode,
@@ -151,52 +238,116 @@ const Loading = () => {
   } = location.state || {}
 
   useEffect(() => {
+    if (requestStartedRef.current) return
+    requestStartedRef.current = true
+
     const analyze = async () => {
-      const formData = new FormData()
-      formData.append("image", file)
+      try {
+        if (!file) {
+          throw new Error("분석할 이미지가 없습니다.")
+        }
 
-      const response = await fetch(`${FASTAPI_BASE}/api/v1/materials/analyze`, {
-        method: "POST",
-        body: formData,
-      })
+        const formData = new FormData()
+        formData.append("image", file)
 
-      const data = await response.json()
-      const fixedResult = JSON.parse(
-        JSON.stringify(normalizeResult(data))
-      )
+        const response = await fetch(`${FASTAPI_BASE}/api/v1/materials/analyze`, {
+          method: "POST",
+          body: formData,
+        })
 
-      navigate("/result", {
-        state: {
-          result: fixedResult,
-          capturedImage: previewImage,
-        },
-      })
+        const data = await response.json().catch(() => ({}))
+
+        if (!response.ok) {
+          throw new Error(
+            data.message ||
+              data.detail ||
+              `분석 요청에 실패했습니다. (${response.status})`
+          )
+        }
+
+        const fixedResult = JSON.parse(
+          JSON.stringify(normalizeAnalysisResult(data))
+        )
+
+        navigate("/result", {
+          state: {
+            result: fixedResult,
+            capturedImage: previewImage,
+          },
+        })
+      } catch (error) {
+        console.error("분석 요청 실패:", error)
+        alert("분석 서버에 연결하지 못했습니다. 서버 실행 상태를 확인해주세요.")
+        navigate(-1)
+      }
     }
 
     const reanalyze = async () => {
-      const response = await fetch(`${FASTAPI_BASE}/api/v1/materials/reanalyze`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          previous_result: result,
-          additional_answers: additionalAnswers,
-          question_type: questionType,
-        }),
-      })
+      try {
+        if (!result) {
+          throw new Error("이전 분석 결과가 없습니다.")
+        }
 
-      const data = await response.json()
-      const fixedResult = JSON.parse(
-        JSON.stringify(normalizeResult(data))
-      )
+        const formData = new FormData()
 
-      navigate("/result", {
-        state: {
-          result: fixedResult,
-          capturedImage,
-        },
-      })
+        if (file) {
+          formData.append("image", file)
+        } else if (capturedImage?.startsWith("data:image")) {
+          const imageBlob = await fetch(capturedImage).then((res) => res.blob())
+          formData.append("image", imageBlob, "reanalyze-image.jpg")
+        } else if (capturedImage?.startsWith("blob:")) {
+          const imageBlob = await fetch(capturedImage).then((res) => res.blob())
+          formData.append("image", imageBlob, "reanalyze-image.jpg")
+        }
+
+        formData.append("previous_result", JSON.stringify(result))
+        formData.append("additional_answers", JSON.stringify(additionalAnswers || []))
+        formData.append("question_type", questionType || "general_reanalysis")
+
+        console.log("재분석 요청 FormData:", {
+          hasFile: !!file,
+          hasCapturedImage: !!capturedImage,
+          result,
+          additionalAnswers,
+          questionType,
+        })
+
+        const response = await fetch(`${FASTAPI_BASE}/api/v1/materials/reanalyze`, {
+          method: "POST",
+          body: formData,
+        })
+
+        const data = await response.json().catch(() => ({}))
+
+        if (!response.ok) {
+          throw new Error(
+            data.message ||
+              data.detail ||
+              `재분석 요청에 실패했습니다. (${response.status})`
+          )
+        }
+
+        const fixedResult = JSON.parse(
+          JSON.stringify(normalizeReanalysisResult(data, result))
+        )
+
+        navigate("/result", {
+          state: {
+            result: fixedResult,
+            capturedImage,
+          },
+        })
+      } catch (error) {
+        console.error("재분석 요청 실패:", error)
+        alert("재분석에 실패해 이전 분석 결과를 그대로 보여드릴게요.")
+        navigate("/result", {
+          replace: true,
+          state: {
+            result,
+            capturedImage,
+          },
+        })
+      }
     }
 
     if (mode === "analyze") analyze()
