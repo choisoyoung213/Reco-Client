@@ -3,7 +3,13 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "packageManager": "npm@11.6.0",
+  "engines": {
+    "node": ">=18",
+    "npm": ">=9"
+  },
   "scripts": {
+    "preinstall": "node -e \"const ex = process.env.npm_execpath || ''; if (/yarn|pnpm/i.test(ex)) { console.error('\\n\\u001b[31mUse npm to install dependencies (npm install).\\u001b[0m\\n'); process.exit(1); }\"",
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",

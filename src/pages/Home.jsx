@@ -95,7 +95,7 @@ const Card = styled.div`
   left: 0;
   width: 393px;
   height: 577px;
-  background: #ffffff !important;
+  background: #ffffff;
   box-shadow: 0px -2px 10px rgba(0, 0, 0, 0.08);
   border-radius: 25px 25px 0 0;
   z-index: 1;
@@ -104,31 +104,26 @@ const Card = styled.div`
 const CategoryGrid = styled.div`
   position: absolute;
   top: 305px;
-  left: 20px;
-  width: 353px;
+  left: 0;
+  right: 0;
   display: flex;
-  gap: 16px;
-  overflow-x: auto;
-  white-space: nowrap;
-  padding-bottom: 10px;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 10px;
   z-index: 2;
-
-  &::-webkit-scrollbar {
-    display: none;
-  }
 `;
 
 const CategoryItem = styled.div`
-  flex: 0 0 auto;
-  width: 68px;
+  flex: 0 0 50px;
+  width: 50px;
   text-align: center;
   cursor: pointer;
 `;
 
 const CategoryIcon = styled.div`
-  width: 52px;
-  height: 52px;
-  margin: 0 auto 8px;
+  width: 44px;
+  height: 44px;
+  margin: 0 auto 4px;
   background-image: url(${(props) => props.$img});
   background-size: contain;
   background-repeat: no-repeat;
@@ -136,9 +131,11 @@ const CategoryIcon = styled.div`
 `;
 
 const CategoryText = styled.div`
-  font-size: 12px;
+  font-size: 10.5px;
   font-weight: 500;
   color: #272727;
+  white-space: nowrap;
+  letter-spacing: -0.3px;
 `;
 
 const LocationHeaderWrapper = styled.div`
