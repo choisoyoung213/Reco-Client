@@ -10,6 +10,16 @@ import BatteryImg from "../assets/battery.png";
 import RecycleImg from "../assets/recycle.png";
 import MedicineImg from "../assets/medicine.png";
 import { getRequiredEnv } from "../config/env";
+import TrashMarker from "../assets/trash-marker.svg";
+import TrashClick from "../assets/trash-click.svg";
+import ClothesMarker from "../assets/clothes-marker.svg";
+import ClothesClick from "../assets/clothes-click.svg";
+import BatteryMarker from "../assets/battery-marker.svg";
+import BatteryClick from "../assets/battery-click.svg";
+import RecycleMarker from "../assets/recycle-marker.svg";
+import RecycleClick from "../assets/recycle-click.svg";
+import MedicineMarker from "../assets/medicine-marker.svg";
+import MedicineClick from "../assets/medicine-click.svg";
 
 const Container = styled.div`
   width: 100%;
@@ -434,6 +444,20 @@ const PLACE_TYPE_IMAGE_MAP = {
   RECYCLE: RecycleImg,
   MEDICINE: MedicineImg,
 };
+const PLACE_TYPE_MARKER_MAP = {
+  TRASH: TrashMarker,
+  CLOTHES: ClothesMarker,
+  BATTERY: BatteryMarker,
+  RECYCLE: RecycleMarker,
+  MEDICINE: MedicineMarker,
+};
+const PLACE_TYPE_CLICK_MARKER_MAP = {
+  TRASH: TrashClick,
+  CLOTHES: ClothesClick,
+  BATTERY: BatteryClick,
+  RECYCLE: RecycleClick,
+  MEDICINE: MedicineClick,
+};
 
 const getPlaceType = (place, fallbackCategory = "") =>
   place.placeType ||
@@ -491,13 +515,6 @@ const MapPage = () => {
     clearMarkers();
   };
 
-  const getSelectedMarkerImage = () =>
-    new window.kakao.maps.MarkerImage(
-      "data:image/svg+xml;charset=utf-8,%3Csvg%20width%3D%2242%22%20height%3D%2252%22%20viewBox%3D%220%200%2042%2052%22%20fill%3D%22none%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cpath%20d%3D%22M21%2051C21%2051%2039%2032.682%2039%2020.824C39%2010.595%2030.941%202%2021%202C11.059%202%203%2010.595%203%2020.824C3%2032.682%2021%2051%2021%2051Z%22%20fill%3D%22%2353B175%22%20stroke%3D%22white%22%20stroke-width%3D%224%22/%3E%3Ccircle%20cx%3D%2221%22%20cy%3D%2220%22%20r%3D%228%22%20fill%3D%22white%22/%3E%3C/svg%3E",
-      new window.kakao.maps.Size(42, 52),
-      { offset: new window.kakao.maps.Point(21, 52) },
-    );
-
   function moveToPlace(place, shouldCollapseSheet = false) {
     setSelectedPlace(place);
     setSelectedPlaceId(place.id);
@@ -513,14 +530,21 @@ const MapPage = () => {
 
     mapInstanceRef.current.panTo(movePosition);
   }
-  const getMarkerImage = (place, category) =>
-    new window.kakao.maps.MarkerImage(
-      getPlaceImage(place, category),
-      new window.kakao.maps.Size(40, 40),
+  const getMarkerImage = (place, category, isSelected = false) => {
+    const type = getPlaceType(place, category);
+
+    const imageSrc = isSelected
+      ? PLACE_TYPE_CLICK_MARKER_MAP[type]
+      : PLACE_TYPE_MARKER_MAP[type];
+
+    return new window.kakao.maps.MarkerImage(
+      imageSrc,
+      new window.kakao.maps.Size(42, 52),
       {
-        offset: new window.kakao.maps.Point(20, 40),
+        offset: new window.kakao.maps.Point(21, 52),
       }
     );
+  };
   const addPlaceMarkers = (
     placeList,
     nextSelectedPlaceId = selectedPlaceId,
@@ -528,7 +552,6 @@ const MapPage = () => {
     if (!mapInstanceRef.current || !window.kakao) return;
 
     clearMarkers();
-    const selectedMarkerImage = getSelectedMarkerImage();
 
     placeList.forEach((place) => {
       const markerPosition = new window.kakao.maps.LatLng(
@@ -539,10 +562,11 @@ const MapPage = () => {
       const marker = new window.kakao.maps.Marker({
         map: mapInstanceRef.current,
         position: markerPosition,
-        image:
-          place.id === nextSelectedPlaceId
-            ? selectedMarkerImage
-            : getMarkerImage(place, activeCategory),
+        image: getMarkerImage(
+          place,
+          activeCategory,
+          place.id === nextSelectedPlaceId,
+        ),
       });
 
       markerListRef.current.push(marker);
