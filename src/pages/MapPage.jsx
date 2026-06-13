@@ -23,7 +23,7 @@ import MedicineClick from "../assets/medicine-click.svg";
 
 const Container = styled.div`
   width: 100%;
-  height: 100vh;
+  height: 100dvh;
   position: relative;
   overflow: hidden;
   background: #fff;
@@ -31,15 +31,17 @@ const Container = styled.div`
 
 const MapBox = styled.div`
   width: 100%;
-  height: 100vh;
+  height: 100dvh;
   background: #eee;
 `;
 
 const SearchBox = styled.div`
   position: absolute;
-  top: 60px;
-  left: 20px;
-  right: 20px;
+
+  top: calc(env(safe-area-inset-top) + 12px);
+
+  left: 16px;
+  right: 16px;
 
   height: 50px;
 
@@ -50,41 +52,46 @@ const SearchBox = styled.div`
   display: flex;
   align-items: center;
 
-  padding: 2px 16px;
+  padding: 0 14px;
   box-sizing: border-box;
 
-  z-index: 10;
+  z-index: 20;
 `;
 
 const SearchInput = styled.input`
   flex: 1;
+  min-width: 0; /* 중요 */
+
   border: none;
   outline: none;
+
   font-family: "Paperlogy";
   font-size: 15px;
-  color: #272727;
-
-  &::placeholder {
-    color: #b8b8b8;
-  }
 `;
 
 const SearchImg = styled.img`
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
+
+  flex-shrink: 0; 
+
   cursor: pointer;
 `;
-
 const CategoryScroll = styled.div`
   position: absolute;
-  top: 120px;
-  left: 20px;
+
+  top: calc(env(safe-area-inset-top) + 72px);
+
+  left: 16px;
   right: 0;
+
   display: flex;
   gap: 10px;
+
   overflow-x: auto;
-  z-index: 10;
-  padding-right: 20px;
+
+  z-index: 20;
+  padding-right: 16px;
 
   &::-webkit-scrollbar {
     display: none;
@@ -108,7 +115,7 @@ const CategoryButton = styled.button`
 const CurrentLocationButton = styled.button`
   position: absolute;
   right: 24px;
-  top: 180px;
+  top: calc(env(safe-area-inset-top) + 130px);
   width: 40px;
   height: 40px;
   border: none;
