@@ -82,10 +82,10 @@ const ChatbotPage = () => {
   useEffect(() => {
     const userId = localStorage.getItem("userId");
 
-    // if (!userId) {
-    //   navigate("/login");
-    //   return;
-    // }
+    if (!userId) {
+      navigate("/login");
+      return;
+    }
 
     const fetchChatHistory = async () => {
       try {
