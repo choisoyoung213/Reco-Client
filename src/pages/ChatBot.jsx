@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import styled from "styled-components";
 import { useNavigate } from "react-router-dom";
 import BiumChatImg from "../assets/img/BiumProfile.svg";
+import BiumSadImg from "../assets/img/BiumSad.svg"; 
 import ChatSelectIcon from "../assets/img/Chat_select.svg";
 import { sendChatToGemini } from "../services/gemini";
 import BackIcon from "../assets/img/Vector.svg";
@@ -52,6 +53,9 @@ const FormattedText = ({ text }) => {
 
 const ChatbotPage = () => {
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState("recent"); 
+  const [chatRooms, setChatRooms] = useState([]); 
+  
   const [inputValue, setInputValue] = useState("");
   const [messages, setMessages] = useState([
     {
@@ -70,8 +74,10 @@ const ChatbotPage = () => {
   };
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages, isLoading]);
+    if (activeTab === "new") {
+      scrollToBottom();
+    }
+  }, [messages, isLoading, activeTab]);
 
   useEffect(() => {
     const userId = localStorage.getItem("userId");
@@ -92,6 +98,12 @@ const ChatbotPage = () => {
         const data = await res.json();
 
         if (data.length > 0) {
+          setChatRooms([
+            { id: "room_1", title: "플라스틱 배출방법" },
+            { id: "room_2", title: "음식물 배출방법" },
+            { id: "room_3", title: "유리 배출방법" }
+          ]);
+
           setMessages(
             data.map((msg) => ({
               id: msg.id,
@@ -103,6 +115,8 @@ const ChatbotPage = () => {
               }),
             })),
           );
+        } else {
+          setChatRooms([]);
         }
       } catch (err) {
         console.error("[비움이] 이전 대화 불러오기 실패:", err);
@@ -111,6 +125,22 @@ const ChatbotPage = () => {
 
     fetchChatHistory();
   }, [navigate]);
+
+  const handleRoomClick = (roomTitle) => {
+    setActiveTab("new");
+  };
+
+  const handleStartNewChat = () => {
+    setMessages([
+      {
+        id: Date.now(),
+        text: "안녕하세요! 새로운 대화를 시작합니다. 궁금한 점을 물어보세요!",
+        sender: "bium",
+        time: nowTime(),
+      },
+    ]);
+    setActiveTab("new");
+  };
 
   const handleSendMessage = async () => {
     if (inputValue.trim() === "" || isLoading) return;
@@ -231,74 +261,103 @@ const ChatbotPage = () => {
         <HeaderTitle>비움이</HeaderTitle>
       </Header>
 
-      <ChatArea>
-        {messages.map((msg) =>
-          msg.sender === "user" ? (
-            <UserMessage key={msg.id}>
-              <TimeStamp>{msg.time}</TimeStamp>
-              <MessageBubble $user>
-                <FormattedText text={msg.text} />
-              </MessageBubble>
-            </UserMessage>
+      <TabContainer>
+        <TabButton $active={activeTab === "recent"} onClick={() => setActiveTab("recent")}>
+          최근대화
+        </TabButton>
+        <TabButton $active={activeTab === "new"} onClick={handleStartNewChat}>
+          새 대화
+        </TabButton>
+      </TabContainer>
+
+      {activeTab === "recent" ? (
+        <RecentChatArea>
+          {chatRooms.length === 0 ? (
+            <EmptyStateWrapper>
+              <EmptyText>진행중인 대화가 없어요</EmptyText>
+              <EmptyCharacter src={BiumSadImg} alt="우는 비움이" />
+            </EmptyStateWrapper>
           ) : (
-            <BiumMessageSection key={msg.id}>
-              <BiumProfile src={BiumChatImg} alt="비움이" />
-              <BiumContent>
-                <BiumName>비움이</BiumName>
-                <BiumResponse>
-                  <MessageBubble>
+            <RoomList>
+              {chatRooms.map((room) => (
+                <RoomItem key={room.id} onClick={() => handleRoomClick(room.title)}>
+                  {room.title}
+                </RoomItem>
+              ))}
+            </RoomList>
+          )}
+        </RecentChatArea>
+      ) : (
+        /* 고친 부분: activeTab이 'new'일 때는 대화가 가능한 채팅 UI 렌더링 */
+        <>
+          <ChatArea>
+            {messages.map((msg) =>
+              msg.sender === "user" ? (
+                <UserMessage key={msg.id}>
+                  <TimeStamp>{msg.time}</TimeStamp>
+                  <MessageBubble $user>
                     <FormattedText text={msg.text} />
                   </MessageBubble>
-                  <TimeStamp>{msg.time}</TimeStamp>
-                </BiumResponse>
-              </BiumContent>
-            </BiumMessageSection>
-          )
-        )}
-        
-        {isLoading && (
-          <BiumMessageSection>
-            <BiumProfile src={BiumChatImg} alt="비움이" />
-            <BiumContent>
-              <BiumName>비움이</BiumName>
-              <BiumResponse>
-                <MessageBubble>입력 중...</MessageBubble>
-              </BiumResponse>
-            </BiumContent>
-          </BiumMessageSection>
-        )}
-        
-        {/* 📍 빈 괄호 오타 수정 및 정상 하단 앵커 스크롤 연결 */}
-        <div ref={chatEndRef} />
-      </ChatArea>
+                </UserMessage>
+              ) : (
+                <BiumMessageSection key={msg.id}>
+                  <BiumProfile src={BiumChatImg} alt="비움이" />
+                  <BiumContent>
+                    <BiumName>비움이</BiumName>
+                    <BiumResponse>
+                      <MessageBubble>
+                        <FormattedText text={msg.text} />
+                      </MessageBubble>
+                      <TimeStamp>{msg.time}</TimeStamp>
+                    </BiumResponse>
+                  </BiumContent>
+                </BiumMessageSection>
+              )
+            )}
+            
+            {isLoading && (
+              <BiumMessageSection>
+                <BiumProfile src={BiumChatImg} alt="비움이" />
+                <BiumContent>
+                  <BiumName>비움이</BiumName>
+                  <BiumResponse>
+                    <MessageBubble>입력 중...</MessageBubble>
+                  </BiumResponse>
+                </BiumContent>
+              </BiumMessageSection>
+            )}
+            <div ref={chatEndRef} />
+          </ChatArea>
 
-      <InputWrapper>
-        <InputContainer>
-          <ChatInput
-            placeholder={
-              isLoading ? "비움이가 응답 중이에요..." : "비움이에게 물어보기"
-            }
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                handleSendMessage();
-              }
-            }}
-            disabled={isLoading}
-          />
-          <SendBtn
-            src={ChatSelectIcon}
-            alt="전송"
-            onClick={handleSendMessage}
-            style={{
-              opacity: isLoading ? 0.5 : 1,
-              pointerEvents: isLoading ? "none" : "auto",
-            }}
-          />
-        </InputContainer>
-      </InputWrapper>
+          <InputWrapper>
+            <InputContainer>
+              <ChatInput
+                placeholder={
+                  isLoading ? "비움이가 응답 중이에요..." : "비움이에게 물어보기"
+                }
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSendMessage();
+                  }
+                }}
+                disabled={isLoading}
+              />
+              <SendBtn
+                src={ChatSelectIcon}
+                alt="전송"
+                onClick={handleSendMessage}
+                style={{
+                  opacity: isLoading ? 0.5 : 1,
+                  pointerEvents: isLoading ? "none" : "auto",
+                }}
+              />
+            </InputContainer>
+          </InputWrapper>
+        </>
+      )}
     </Container>
   );
 };
@@ -317,7 +376,6 @@ const Header = styled.div`
   display: flex;
   align-items: center;
   padding: 15px 20px;
-  border-bottom: 1px solid #f2f2f2;
 `;
 
 const BackBtn = styled.div`
@@ -340,6 +398,73 @@ const HeaderTitle = styled.h1`
   font-weight: 800;
   margin-right: 24px;
   color: #272727;
+`;
+
+const TabContainer = styled.div`
+  display: flex;
+  padding: 0 20px;
+  border-bottom: 1px solid #f2f2f2;
+  gap: 20px;
+`;
+
+const TabButton = styled.button`
+  background: none;
+  border: none;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 10px 4px;
+  cursor: pointer;
+  color: ${(props) => (props.$active ? "#53B175" : "#7c7c7c")};
+  border-bottom: ${(props) => (props.$active ? "3px solid #53B175" : "3px solid transparent")};
+  transition: all 0.2s ease;
+`;
+
+const RecentChatArea = styled.div`
+  flex: 1;
+  overflow-y: auto;
+  background-color: #fff;
+`;
+
+const EmptyStateWrapper = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 80%;
+  gap: 30px;
+`;
+
+const EmptyText = styled.p`
+  font-size: 16px;
+  font-weight: 700;
+  color: #555555;
+`;
+
+const EmptyCharacter = styled.img`
+  width: 180px;
+  height: auto;
+`;
+
+const RoomList = styled.div`
+  display: flex;
+  flex-direction: column;
+  padding: 15px 20px;
+  gap: 12px;
+`;
+
+const RoomItem = styled.div`
+  background-color: #e2e2e2;
+  padding: 15px 20px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #272727;
+  cursor: pointer;
+  transition: opacity 0.2s;
+
+  &:hover {
+    opacity: 0.8;
+  }
 `;
 
 const ChatArea = styled.div`

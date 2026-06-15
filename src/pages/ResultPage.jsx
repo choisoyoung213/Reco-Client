@@ -6,7 +6,6 @@ import EcoLabelIcon from "../assets/img/RecoIcon.svg";
 import BottomNav from "../components/BottomNav";
 import ChatIcon from "../assets/img/ChatIcon.svg";
 
-// 오염도 이모션 아이콘 로드
 import GoodIcon from "../assets/img/goodIcon.svg";
 import NormalIcon from "../assets/img/normalIcon.svg";
 import BadIcon from "../assets/img/badIcon.svg";
@@ -24,10 +23,8 @@ const ResultPage = () => {
   const [isSaved, setIsSaved] = useState(false);
   const autoSaveAttemptedRef = useRef(false);
 
-  // 📍 더미 데이터 제거 및 백엔드 라우팅 데이터 구조 완전 정착
   const { result, capturedImage, file } = location.state || {};
 
-  // 데이터가 없을 경우 비정상 접근이므로 이전 페이지로 튕겨버리는 방어 코드 추가
   useEffect(() => {
     if (!result) {
       alert("분석 결과 데이터가 존재하지 않습니다.");
@@ -189,7 +186,6 @@ const getMaterialPercent = (item) =>
       ? value.length > 0
       : value && typeof value === "object";
 
-  // 📝 백엔드 응답 규격 파싱 함수: 문자열/배열/객체 모두 대응
   const parseMaterialProbabilities = (value) => {
     if (!value) return [];
 
@@ -252,15 +248,11 @@ const getMaterialPercent = (item) =>
         ],
   );
   
-  // 1. 높은 확률순 내림차순 정렬
   let sortedMaterialData = [...rawMaterialData].sort((a, b) => b.percent - a.percent);
-
-  // 2. 💡 확률이 0%인 재질은 완벽하게 배제 (실물 그래프에 매핑된 것만 추출)
   sortedMaterialData = sortedMaterialData.filter(item => item.percent > 0);
 
   const contaminationStatus = result.contaminationStatus || "good";
 
-  // 🎨 도넛 차트 순위별 고정 색상 팔레트
   const colorPalette = ["#53B175", "#1E3A2F", "#D3D3D3"];
   const chartBackground =
     sortedMaterialData.length > 0
@@ -323,7 +315,6 @@ const getMaterialPercent = (item) =>
           </DonutChartContainer>
 
           <Legend>
-            {/* 💡 확률 분포 데이터가 실재하는 요소만 범례(Legend) 컴포넌트로 동적 매핑 */}
             {sortedMaterialData.map((item, index) => {
               const dotColor = colorPalette[index] || "#D3D3D3";
               return (
@@ -534,8 +525,8 @@ const EcoLabel = styled.img`
 
 const EmotionIcon = styled.img`
   position: absolute;
-  left: 20px;
-  bottom: 16px;
+  right: 20px;
+  top: 16px;
   width: 38px;
   height: 38px;
   z-index: 10;
@@ -546,8 +537,8 @@ const EmotionIcon = styled.img`
 
 const ContaminationTooltip = styled.div`
   position: absolute;
-  left: 65px;
-  bottom: 18px;
+  right: 65px;
+  top: 22px;
   background-color: #e1e1e1;
   color: #6b6b6b;
   font-size: 13px;
@@ -563,12 +554,12 @@ const ContaminationTooltip = styled.div`
   &::after {
     content: "";
     position: absolute;
-    left: -6px;
+    right: -6px;
     top: 50%;
     transform: translateY(-50%);
-    border-width: 4px 6px 4px 0;
+    border-width: 4px 0 4px 6px;
     border-style: solid;
-    border-color: transparent #e1e1e1 transparent transparent;
+    border-color: transparent transparent transparent #e1e1e1;
   }
 `;
 
