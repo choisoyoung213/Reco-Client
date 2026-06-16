@@ -140,11 +140,27 @@ const BottomSheet = styled.div`
   z-index: 10;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   box-shadow: 0px -4px 18px rgba(0, 0, 0, 0.12);
   transition: ${({ $isDragging }) =>
     $isDragging ? "none" : "height 180ms ease-out"};
   will-change: height;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+`;
+
+const WhiteSheetBackground = styled.div`
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: calc(120px + env(safe-area-inset-bottom));
+  background: #fff;
+  z-index: 9;
+  pointer-events: none;
 `;
 
 const Handle = styled.div`
@@ -332,12 +348,12 @@ const ReportButton = styled.button`
 const DEFAULT_SHEET_HEIGHT = 250;
 const MIN_SHEET_HEIGHT = 120;
 const SHEET_COLLAPSE_THRESHOLD = 220;
-const MAX_SHEET_VIEWPORT_RATIO = 0.9;
+const MAX_SHEET_VIEWPORT_RATIO = 0.62;
 
 const getMaxSheetHeight = () => {
   if (typeof window === "undefined") return DEFAULT_SHEET_HEIGHT;
 
-  const viewportHeight = window.visualViewport?.height || window.innerHeight;
+  const viewportHeight = window.innerHeight;
 
   return Math.max(
     DEFAULT_SHEET_HEIGHT,
@@ -1213,7 +1229,9 @@ const MapPage = () => {
       </CurrentLocationButton>
 
       {isOpen ? (
-        <BottomSheet $height={sheetHeight} $isDragging={isSheetDragging}>
+        <>
+          <WhiteSheetBackground />
+          <BottomSheet $height={sheetHeight} $isDragging={isSheetDragging}>
           <Handle
             onMouseDown={handleDragStart}
             onMouseMove={handleDragMove}
@@ -1310,7 +1328,8 @@ const MapPage = () => {
             </>
             )}
           </SheetContent>
-        </BottomSheet>
+          </BottomSheet>
+        </>
       ) : (
         <>
           <MiniSheet
