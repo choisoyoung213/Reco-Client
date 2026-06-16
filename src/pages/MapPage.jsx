@@ -138,8 +138,13 @@ const BottomSheet = styled.div`
   border-radius: 24px 24px 0 0;
   padding: 14px 14px 16px;
   z-index: 10;
-  overflow-y: auto;
-  transition: none;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0px -4px 18px rgba(0, 0, 0, 0.12);
+  transition: ${({ $isDragging }) =>
+    $isDragging ? "none" : "height 180ms ease-out"};
+  will-change: height;
 `;
 
 const Handle = styled.div`
@@ -150,6 +155,8 @@ const Handle = styled.div`
   margin: 0 auto 28px;
 
   cursor: pointer;
+  flex-shrink: 0;
+  touch-action: none;
 `;
 
 const SheetTitle = styled.div`
@@ -161,10 +168,23 @@ const SheetTitle = styled.div`
   font-weight: 700;
   color: #272727;
   margin-bottom: 24px;
+  flex-shrink: 0;
 `;
 
 const GreenText = styled.span`
   color: #53b175;
+`;
+
+const SheetContent = styled.div`
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-bottom: 8px;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
 `;
 
 const PlaceCard = styled.div`
@@ -309,6 +329,21 @@ const ReportButton = styled.button`
   font-weight: 600;
   cursor: pointer;
 `;
+const DEFAULT_SHEET_HEIGHT = 250;
+const MIN_SHEET_HEIGHT = 120;
+const SHEET_COLLAPSE_THRESHOLD = 220;
+const MAX_SHEET_VIEWPORT_RATIO = 0.9;
+
+const getMaxSheetHeight = () => {
+  if (typeof window === "undefined") return DEFAULT_SHEET_HEIGHT;
+
+  const viewportHeight = window.visualViewport?.height || window.innerHeight;
+
+  return Math.max(
+    DEFAULT_SHEET_HEIGHT,
+    Math.round(viewportHeight * MAX_SHEET_VIEWPORT_RATIO),
+  );
+};
 const DEFAULT_POSITION = {
   latitude: 37.4604,
   longitude: 126.9188,
@@ -504,8 +539,8 @@ const MapPage = () => {
   const [currentDistrict, setCurrentDistrict] = useState("");
   const [locationEnabled, setLocationEnabled] = useState(isLocationAllowed());
   const [isSearchMode, setIsSearchMode] = useState(false);
-  const DEFAULT_SHEET_HEIGHT = 250;
   const [sheetHeight, setSheetHeight] = useState(DEFAULT_SHEET_HEIGHT);
+  const [isSheetDragging, setIsSheetDragging] = useState(false);
   const sheetStartHeight = useRef(DEFAULT_SHEET_HEIGHT);
   const dragStartY = useRef(null);
   const clearMarkers = () => {
@@ -521,6 +556,22 @@ const MapPage = () => {
     markerPlacesRef.current = [];
     clearMarkers();
   };
+
+  useEffect(() => {
+    const syncSheetHeight = () => {
+      setSheetHeight((currentHeight) =>
+        Math.min(currentHeight, getMaxSheetHeight()),
+      );
+    };
+
+    window.addEventListener("resize", syncSheetHeight);
+    window.visualViewport?.addEventListener("resize", syncSheetHeight);
+
+    return () => {
+      window.removeEventListener("resize", syncSheetHeight);
+      window.visualViewport?.removeEventListener("resize", syncSheetHeight);
+    };
+  }, []);
 
   function moveToPlace(place, shouldCollapseSheet = false) {
     setSelectedPlace(place);
@@ -1045,6 +1096,7 @@ const MapPage = () => {
   const handleDragStart = (e) => {
     dragStartY.current = e.touches ? e.touches[0].clientY : e.clientY;
     sheetStartHeight.current = sheetHeight;
+    setIsSheetDragging(true);
   };
 
   const handleDragMove = (e) => {
@@ -1057,15 +1109,18 @@ const MapPage = () => {
 
     const nextHeight = sheetStartHeight.current + diff;
 
-    setSheetHeight(Math.min(Math.max(nextHeight, 120), 560));
+    setSheetHeight(
+      Math.min(Math.max(nextHeight, MIN_SHEET_HEIGHT), getMaxSheetHeight()),
+    );
   };
 
   const handleDragEnd = () => {
-    if (sheetHeight < 220 && places.length > 0) {
+    if (sheetHeight < SHEET_COLLAPSE_THRESHOLD && places.length > 0) {
       setIsOpen(false);
     }
 
     dragStartY.current = null;
+    setIsSheetDragging(false);
   };
   const handleSearch = () => {
     if (!keyword.trim()) return;
@@ -1158,7 +1213,7 @@ const MapPage = () => {
       </CurrentLocationButton>
 
       {isOpen ? (
-        <BottomSheet $height={sheetHeight}>
+        <BottomSheet $height={sheetHeight} $isDragging={isSheetDragging}>
           <Handle
             onMouseDown={handleDragStart}
             onMouseMove={handleDragMove}
@@ -1181,7 +1236,8 @@ const MapPage = () => {
             </div>
           </SheetTitle>
 
-          {places.length > 0 ? (
+          <SheetContent>
+            {places.length > 0 ? (
             places.map((place) => {
               const displayCategory = getDisplayCategory(place, activeCategory);
 
@@ -1252,7 +1308,8 @@ const MapPage = () => {
                 </ReportButton>
               )}
             </>
-          )}
+            )}
+          </SheetContent>
         </BottomSheet>
       ) : (
         <>
