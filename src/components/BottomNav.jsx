@@ -61,7 +61,6 @@ const CameraWrapper = styled.div`
 
 const StyledCameraIcon = styled.img` width: 32px; height: 32px; object-fit: contain; `;
 
-// --- 컴포넌트 ---
 const BottomNavComponent = ({ onCapture }) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -74,10 +73,8 @@ const BottomNavComponent = ({ onCapture }) => {
 
   const handleCameraClick = () => {
     if (isScan && onCapture) {
-      // 현재 스캔 페이지에 있고 촬영 함수가 전달되었다면 사진 촬영!
       onCapture();
     } else {
-      // 그 외의 페이지라면 스캔 페이지로 이동
       navigate('/scan');
     }
   };
@@ -93,7 +90,7 @@ const BottomNavComponent = ({ onCapture }) => {
       </NavItem>
 
       <CameraWrapper onClick={handleCameraClick}>
-        <StyledCameraIcon src={CameraIcon} />
+        <StyledCameraIcon src={isScan ? ScanIcon : CameraIcon} alt="Camera" />
       </CameraWrapper>
 
       <NavItem onClick={() => navigate('/activity')}>
