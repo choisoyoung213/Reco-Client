@@ -355,6 +355,10 @@ const Activity = () => {
 
   const calendarDays = getCalendarDays(selectedYear, selectedMonth);
   const selectedWeek = getWeekText(selectedYear, selectedMonth, selectedDay);
+  const isSelectedToday =
+    selectedYear === today.getFullYear() &&
+    selectedMonth === today.getMonth() &&
+    selectedDay === today.getDate();
 
   const activityDates = new Set(
     records.map((record) => {
@@ -519,7 +523,7 @@ const Activity = () => {
       <TodaySection>
         <TodayHeader>
           <TodayDate>{selectedDay}</TodayDate>
-          <TodayLabel>오늘</TodayLabel>
+          <TodayLabel>{isSelectedToday ? "오늘" : "일"}</TodayLabel>
         </TodayHeader>
 
         {hasActivity && (
