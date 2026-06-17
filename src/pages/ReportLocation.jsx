@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react"
 import styled from "styled-components"
 import { useNavigate } from "react-router-dom"
 import { getRequiredEnv } from "../config/env"
+import { getCurrentUserId } from "../services/authUser"
+import { createPlaceReport } from "../services/placeReport"
 import BackIcon from "../assets/img/Vector.svg"
 
 const Container = styled.div`
@@ -65,6 +67,7 @@ const CategoryGrid = styled.div`
 `
 
 const CategoryItem = styled.div`
+  grid-column: ${({ $wide }) => $wide ? 'span 2' : 'auto'};
   padding: 14px;
   border-radius: 12px;
   border: ${({ $selected }) => $selected ? '2px solid #53B175' : '1px solid #E0E0E0'};
@@ -217,7 +220,19 @@ const CATEGORIES = [
     "\uae38\uac70\ub9ac \uc4f0\ub808\uae30\ud1b5",
     "\uc758\ub958\uc218\uac70\ud568",
     "\ud3d0\ud615\uad11\ub4f1, \ud3d0\uac74\uc804\uc9c0 \uc218\uac70\ud568",
+    "\ud3d0\uc758\uc57d\ud488",
 ]
+
+const CATEGORY_TYPE_MAP = {
+    "\ubd84\ub9ac\uc218\uac70\ud568": "RECYCLE",
+    "\uae38\uac70\ub9ac \uc4f0\ub808\uae30\ud1b5": "TRASH",
+    "\uc758\ub958\uc218\uac70\ud568": "CLOTHES",
+    "\ud3d0\ud615\uad11\ub4f1, \ud3d0\uac74\uc804\uc9c0 \uc218\uac70\ud568": "BATTERY",
+    "\ud3d0\uc758\uc57d\ud488": "MEDICINE",
+}
+
+const getDistrictFromAddress = (value) =>
+    String(value || "").match(/[가-힣]+구/)?.[0] || ""
 
 const ReportLocation = () => {
     const navigate = useNavigate()
@@ -226,8 +241,8 @@ const ReportLocation = () => {
     const [address, setAddress] = useState("")
     const [detailAddress, setDetailAddress] = useState("")
     const [memo, setMemo] = useState("")
-    const [searchedPlace, setSearchedPlace] = useState(null)
     const [searchResults, setSearchResults] = useState([])
+    const [isSubmitting, setIsSubmitting] = useState(false)
 
     useEffect(() => {
         if (window.kakao?.maps?.services) return
@@ -248,7 +263,7 @@ const ReportLocation = () => {
         if (existingScript) return
 
         const script = document.createElement("script")
-        script.src = `https://dapi.kakao.com/v2/maps/${kakaoMapKey}&autoload=false&libraries=services`
+        script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${kakaoMapKey}&autoload=false&libraries=services`
         script.async = true
         script.onload = () => {
             window.kakao.maps.load(() => { })
@@ -280,22 +295,38 @@ const ReportLocation = () => {
         })
     }
 
-    const handleSubmit = () => {
-        if (!selectedCategory || !address || !detailAddress.trim()) return
+    const handleSubmit = async () => {
+        if (!selectedCategory || !address.trim() || isSubmitting) return
 
-        const reportData = {
-            category: selectedCategory,
-            address,
-            detailAddress,
-            memo,
-            latitude: searchedPlace?.latitude || null,
-            longitude: searchedPlace?.longitude || null,
+        const userId = getCurrentUserId()
+
+        if (!userId) {
+            alert("로그인이 필요합니다.")
+            navigate("/login")
+            return
         }
 
-        console.log("\uc704\uce58 \uc81c\ubcf4 \ub370\uc774\ud130:", reportData)
+        const reportData = {
+            userId,
+            placeType: CATEGORY_TYPE_MAP[selectedCategory],
+            name: detailAddress.trim() || address.trim(),
+            district: getDistrictFromAddress(address),
+            address: address.trim(),
+            detailAddress: detailAddress.trim(),
+            description: memo.trim(),
+        }
 
-        alert("\uc81c\ubcf4\uac00 \uc811\uc218\ub418\uc5c8\uc2b5\ub2c8\ub2e4. \uac10\uc0ac\ud569\ub2c8\ub2e4!")
-        navigate(-1)
+        try {
+            setIsSubmitting(true)
+            await createPlaceReport(reportData)
+            alert("\uc704\uce58 \uc81c\ubcf4\uac00 \uc811\uc218\ub418\uc5c8\uc2b5\ub2c8\ub2e4.")
+            navigate("/location")
+        } catch (error) {
+            console.error("\uc704\uce58 \uc81c\ubcf4 \uc2e4\ud328:", error)
+            alert("\uc704\uce58 \uc81c\ubcf4\uc5d0 \uc2e4\ud328\ud588\uc2b5\ub2c8\ub2e4.")
+        } finally {
+            setIsSubmitting(false)
+        }
     }
 
     return (
@@ -313,6 +344,7 @@ const ReportLocation = () => {
                     {CATEGORIES.map((category) => (
                         <CategoryItem
                             key={category}
+                            $wide={category === "\ud3d0\uc758\uc57d\ud488"}
                             $selected={selectedCategory === category}
                             onClick={() => setSelectedCategory(category)}
                         >
@@ -330,7 +362,6 @@ const ReportLocation = () => {
                         value={address}
                         onChange={(e) => {
                             setAddress(e.target.value)
-                            setSearchedPlace(null)
                         }}
                         onKeyDown={(e) => {
                             if (e.key === "Enter") handleSearchAddress()
@@ -357,13 +388,6 @@ const ReportLocation = () => {
                                         place.place_name,
                                     )
 
-                                    setSearchedPlace({
-                                        name: place.place_name,
-                                        address: place.road_address_name || place.address_name,
-                                        latitude: Number(place.y),
-                                        longitude: Number(place.x),
-                                    })
-
                                     setSearchResults([])
                                 }}
                             >
@@ -387,10 +411,10 @@ const ReportLocation = () => {
             </Section>
 
             <SubmitButton
-                disabled={!selectedCategory || !address || !detailAddress.trim()}
+                disabled={!selectedCategory || !address.trim() || isSubmitting}
                 onClick={handleSubmit}
             >
-                {"\uc81c\ubcf4\ud558\uae30"}
+                {isSubmitting ? "\uc81c\ubcf4 \uc911..." : "\uc81c\ubcf4\ud558\uae30"}
             </SubmitButton>
         </Container>
     )

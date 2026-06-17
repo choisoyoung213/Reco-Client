@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom"
 import profileImg from "../assets/img/profile.jpg"
 import BottomNavComponent from "../components/BottomNav"
 import EditIcon from "../assets/img/edit.svg"
+import { getCurrentUserId, hasLoginSession } from "../services/authUser"
+import { getMyPlaceReports } from "../services/placeReport"
 
 const Container = styled.div`
   display: flex;
@@ -162,6 +164,11 @@ const ContactModal = styled.div`
   padding: 20px;
 `
 
+const ReportHistoryModal = styled(ContactModal)`
+  max-height: 78vh;
+  overflow-y: auto;
+`
+
 const ModalTitle = styled.p`
   font-family: 'Paperlogy';
   font-size: 17px;
@@ -206,21 +213,118 @@ const ModalButton = styled.button`
   cursor: pointer;
 `
 
+const ReportTitle = styled.p`
+  font-family: 'Paperlogy';
+  font-size: 16px;
+  font-weight: 700;
+  color: #272727;
+  text-align: left;
+  margin-bottom: 10px;
+`
+
+const ReportList = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+`
+
+const ReportCard = styled.div`
+  border: 1px solid #e7e7e7;
+  border-radius: 12px;
+  background: #fff;
+  padding: 14px;
+  text-align: left;
+`
+
+const ReportCardTop = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+`
+
+const ReportCategory = styled.p`
+  font-family: 'Paperlogy';
+  font-size: 14px;
+  font-weight: 700;
+  color: #272727;
+`
+
+const StatusBadge = styled.span`
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: ${({ $status }) =>
+    $status === "APPROVED" ? "#F0FAF4" : $status === "REJECTED" ? "#FFF1F1" : "#FFF8E6"};
+  color: ${({ $status }) =>
+    $status === "APPROVED" ? "#53B175" : $status === "REJECTED" ? "#E35454" : "#B98500"};
+  padding: 5px 8px;
+  font-family: 'Paperlogy';
+  font-size: 11px;
+  font-weight: 700;
+`
+
+const ReportText = styled.p`
+  font-family: 'Paperlogy';
+  font-size: 13px;
+  line-height: 1.5;
+  color: #555;
+  word-break: keep-all;
+`
+
+const ReportMeta = styled.p`
+  margin-top: 8px;
+  font-family: 'Paperlogy';
+  font-size: 12px;
+  color: #959595;
+`
+
+const ReportEmpty = styled.p`
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.05);
+  padding: 18px;
+  font-family: 'Paperlogy';
+  font-size: 13px;
+  color: #959595;
+  text-align: center;
+`
+
+const PLACE_TYPE_LABEL_MAP = {
+  RECYCLE: "분리수거함",
+  TRASH: "길거리 쓰레기통",
+  CLOTHES: "의류수거함",
+  BATTERY: "폐형광등, 폐건전지 수거함",
+  MEDICINE: "폐의약품",
+}
+
+const STATUS_LABEL_MAP = {
+  PENDING: "승인 대기",
+  APPROVED: "승인 완료",
+  REJECTED: "반려",
+}
+
+const getReportCategoryLabel = (report) =>
+  PLACE_TYPE_LABEL_MAP[report.placeType] || report.placeType || report.category || "카테고리 없음"
+
+const getReportStatusLabel = (status) => STATUS_LABEL_MAP[status] || status || "상태 없음"
+
 const MyPage = () => {
   const navigate = useNavigate()
 
   const [userName, setUserName] = useState("사용자 명")
   const [editName, setEditName] = useState("사용자 명")
   const [isEditing, setIsEditing] = useState(false)
-  const [autoSave, setAutoSave] = useState(true)
   const [locationAllowed, setLocationAllowed] = useState(false)
   const [isContactOpen, setIsContactOpen] = useState(false)
+  const [isReportHistoryOpen, setIsReportHistoryOpen] = useState(false)
   const [contactContent, setContactContent] = useState("")
+  const [placeReports, setPlaceReports] = useState([])
+  const [isReportLoading, setIsReportLoading] = useState(false)
+  const [reportLoadError, setReportLoadError] = useState("")
 
   useEffect(() => {
     const savedUsername = localStorage.getItem("username")
     const savedUserId = localStorage.getItem("userId")
-    const savedAutoSave = localStorage.getItem("autoSave")
     const savedLocationAllowed = localStorage.getItem("locationAllowed")
     const savedUserName = localStorage.getItem("userName")
     const nextUserName = savedUserName || savedUsername || savedUserId || "사용자 명"
@@ -228,21 +332,38 @@ const MyPage = () => {
     setUserName(nextUserName)
     setEditName(nextUserName)
 
-    if (savedAutoSave !== null) {
-      setAutoSave(savedAutoSave === "true")
-    }
-
     if (savedLocationAllowed !== null) {
       setLocationAllowed(savedLocationAllowed === "true")
     }
   }, [])
 
-  const handleAutoSave = () => {
-    setAutoSave((prev) => {
-      localStorage.setItem("autoSave", !prev)
-      return !prev
-    })
-  }
+  useEffect(() => {
+    if (!isReportHistoryOpen) return
+
+    const loadPlaceReports = async () => {
+      const userId = getCurrentUserId()
+
+      if (!userId) {
+        setPlaceReports([])
+        setReportLoadError(hasLoginSession() ? "" : "로그인이 필요합니다.")
+        setIsReportLoading(false)
+        return
+      }
+
+      try {
+        setIsReportLoading(true)
+        setReportLoadError("")
+        setPlaceReports(await getMyPlaceReports(userId))
+      } catch (error) {
+        console.error("내 위치 제보 조회 실패:", error)
+        setReportLoadError("내 위치 제보를 불러오지 못했습니다.")
+      } finally {
+        setIsReportLoading(false)
+      }
+    }
+
+    loadPlaceReports()
+  }, [isReportHistoryOpen])
 
   const handleLocationPermission = () => {
     if (locationAllowed) {
@@ -336,6 +457,7 @@ const MyPage = () => {
     localStorage.removeItem("refreshToken")
     localStorage.removeItem("userId")
     localStorage.removeItem("username")
+    localStorage.removeItem("user")
     localStorage.removeItem("userName")
     navigate("/login")
   }
@@ -370,11 +492,9 @@ const MyPage = () => {
       </ProfileSection>
 
       <SettingSection>
-        <SettingRow>
-          <SettingText>자동 결과 저장</SettingText>
-          <Toggle type="button" $isOn={autoSave} onClick={handleAutoSave}>
-            <ToggleCircle $isOn={autoSave} />
-          </Toggle>
+        <SettingRow clickable onClick={() => setIsReportHistoryOpen(true)}>
+          <SettingText>위치 제보 내역</SettingText>
+          <SettingValue>보기</SettingValue>
         </SettingRow>
 
         <SettingRow>
@@ -388,6 +508,52 @@ const MyPage = () => {
           <SettingText>문의하기</SettingText>
         </SettingRow>
       </SettingSection>
+
+      {isReportHistoryOpen && (
+        <ModalOverlay>
+          <ReportHistoryModal>
+            <ReportTitle>위치 제보 내역</ReportTitle>
+
+            {isReportLoading ? (
+              <ReportEmpty>위치 제보 내역을 불러오는 중입니다.</ReportEmpty>
+            ) : reportLoadError ? (
+              <ReportEmpty>{reportLoadError}</ReportEmpty>
+            ) : placeReports.length === 0 ? (
+              <ReportEmpty>아직 제보한 위치 데이터가 없습니다.</ReportEmpty>
+            ) : (
+              <ReportList>
+                {placeReports.map((report) => (
+                  <ReportCard key={report.id || `${report.address}-${report.detailAddress}`}>
+                    <ReportCardTop>
+                      <ReportCategory>{getReportCategoryLabel(report)}</ReportCategory>
+                      <StatusBadge $status={report.status}>
+                        {getReportStatusLabel(report.status)}
+                      </StatusBadge>
+                    </ReportCardTop>
+
+                    <ReportText>{report.address || "주소 정보가 없습니다."}</ReportText>
+                    {report.detailAddress && (
+                      <ReportText>{report.detailAddress}</ReportText>
+                    )}
+                    {report.description && (
+                      <ReportText>{report.description}</ReportText>
+                    )}
+                    {report.geocodeStatus && (
+                      <ReportMeta>좌표 변환 상태: {report.geocodeStatus}</ReportMeta>
+                    )}
+                  </ReportCard>
+                ))}
+              </ReportList>
+            )}
+
+            <ModalButtonRow>
+              <ModalButton type="button" onClick={() => setIsReportHistoryOpen(false)}>
+                닫기
+              </ModalButton>
+            </ModalButtonRow>
+          </ReportHistoryModal>
+        </ModalOverlay>
+      )}
 
       {isContactOpen && (
         <ModalOverlay>

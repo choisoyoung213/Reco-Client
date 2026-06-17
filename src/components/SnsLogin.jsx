@@ -88,6 +88,13 @@ const SnsLogin = () => {
 
         localStorage.setItem("userId", user.id);
         localStorage.setItem("username", user.username);
+        localStorage.setItem(
+          "user",
+          JSON.stringify({
+            id: user.id,
+            username: user.username,
+          }),
+        );
 
         window.location.href = "/";
       } catch (error) {

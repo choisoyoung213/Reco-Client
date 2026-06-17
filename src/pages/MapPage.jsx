@@ -21,6 +21,8 @@ import RecycleClick from "../assets/recycle-click.svg";
 import MedicineMarker from "../assets/medicine-marker.svg";
 import MedicineClick from "../assets/medicine-click.svg";
 
+import { FALLBACK_PLACES } from "../data/fallbackPlaces.js";
+
 const Container = styled.div`
   width: 100%;
   height: 100dvh;
@@ -364,7 +366,7 @@ const DEFAULT_POSITION = {
   latitude: 37.4604,
   longitude: 126.9188,
 };
-const DEFAULT_DISTRICT = "관악구";
+const DEFAULT_DISTRICT = "";
 
 const isLocationAllowed = () =>
   localStorage.getItem("locationAllowed") === "true";
@@ -726,7 +728,8 @@ const MapPage = () => {
       markerPlacesRef.current = sortedPlaces;
 
       if (sortedPlaces.length === 0) {
-        resetPlaceState();
+        clearMarkers();
+        markerPlacesRef.current = [];
         return;
       }
 
@@ -735,6 +738,28 @@ const MapPage = () => {
       if (requestId !== placeRequestIdRef.current) return;
 
       console.error("장소 조회 실패:", error);
+
+      const type = CATEGORY_TYPE_MAP[category];
+
+      const fallbackDistrict = district || currentDistrict || "";
+
+      const fallbackData =
+        fallbackDistrict && FALLBACK_PLACES[fallbackDistrict]
+          ? FALLBACK_PLACES[fallbackDistrict][type] || []
+          : [];
+
+      if (fallbackData.length > 0) {
+        const sortedPlaces = getPlacesByDistance(fallbackData, {
+          latitude,
+          longitude,
+        });
+
+        setPlaces(sortedPlaces.slice(0, 3));
+        markerPlacesRef.current = sortedPlaces;
+        addPlaceMarkers(sortedPlaces, null);
+        return;
+      }
+
       resetPlaceState();
       setPlaceLoadError("장소 정보를 불러오지 못했습니다.");
     }
@@ -849,7 +874,10 @@ const MapPage = () => {
       mapInstanceRef.current.setLevel(4);
 
       if (activeCategory === "북마크") {
-        fetchBookmarkedPlaces(cachedPosition.latitude, cachedPosition.longitude);
+        fetchBookmarkedPlaces(
+          cachedPosition.latitude,
+          cachedPosition.longitude,
+        );
       } else {
         fetchPlaces(
           cachedPosition.latitude,
@@ -1069,13 +1097,12 @@ const MapPage = () => {
     setActiveCategory(category);
     setIsOpen(true);
     setSheetHeight(DEFAULT_SHEET_HEIGHT);
-    resetPlaceState();
 
     if (!isLocationAllowed() && !isSearchMode) {
       setLocationEnabled(false);
 
       if (category === "북마크") {
-        await fetchBookmarkedPlaces(
+        fetchBookmarkedPlaces(
           DEFAULT_POSITION.latitude,
           DEFAULT_POSITION.longitude,
         );
@@ -1094,7 +1121,7 @@ const MapPage = () => {
     setLocationEnabled(true);
 
     if (category === "북마크") {
-      await fetchBookmarkedPlaces(
+      fetchBookmarkedPlaces(
         currentPosition.latitude,
         currentPosition.longitude,
       );
@@ -1176,7 +1203,7 @@ const MapPage = () => {
         mapInstanceRef.current.setLevel(4);
 
         if (activeCategory === "북마크") {
-          await fetchBookmarkedPlaces(
+          fetchBookmarkedPlaces(
             searchedPosition.latitude,
             searchedPosition.longitude,
           );
