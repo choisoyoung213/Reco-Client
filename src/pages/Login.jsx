@@ -112,6 +112,13 @@ const Login = () => {
 
       localStorage.setItem("userId", data.id);
       localStorage.setItem("username", data.username || userId);
+      localStorage.setItem(
+        "user",
+        JSON.stringify({
+          id: data.id,
+          username: data.username || userId,
+        }),
+      );
 
       navigate("/");
     } catch (error) {
