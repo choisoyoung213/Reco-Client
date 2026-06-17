@@ -88,8 +88,13 @@ const SignUp = () => {
   const [errorMsg, setErrorMsg] = useState("");
 
   const handleSignUp = async () => {
-    if (!userId || !password) {
+    if (!userId || !password || !passwordCheck) {
       setErrorMsg("아이디와 비밀번호를 입력해주세요.");
+      return;
+    }
+
+    if (password !== passwordCheck) {
+      setErrorMsg("비밀번호가 일치하지 않습니다.");
       return;
     }
 
