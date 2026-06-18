@@ -180,7 +180,7 @@ const ActivityItem = styled.div`
   padding: 18px 24px;
   border-radius: 12px;
   background: ${({ $green }) => ($green ? "#53b175" : "#fff")};
-  border: ${({ $green }) => ($green ? "none" : "1px solid #e0e0e0")};
+  border: ${({ $green }) => ($green ? "none" : "1px solid #53b175")};
   margin-bottom: 8px;
   min-height: 58px;
   box-sizing: border-box;
