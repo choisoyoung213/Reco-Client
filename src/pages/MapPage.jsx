@@ -28,6 +28,7 @@ const Container = styled.div`
   height: 100dvh;
   position: relative;
   overflow: hidden;
+  overscroll-behavior: none;
   background: #fff;
 `;
 
@@ -144,10 +145,14 @@ const BottomSheet = styled.div`
   flex-direction: column;
   overflow-x: hidden;
   overflow-y: auto;
-  box-shadow: 0px -4px 18px rgba(0, 0, 0, 0.12);
+  overscroll-behavior: contain;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+  box-shadow: 0 -8px 18px -14px rgba(0, 0, 0, 0.18);
   transition: ${({ $isDragging }) =>
     $isDragging ? "none" : "height 180ms ease-out"};
   will-change: height;
+  background-clip: padding-box;
 
   &::-webkit-scrollbar {
     display: none;
@@ -159,7 +164,7 @@ const WhiteSheetBackground = styled.div`
   left: 0;
   right: 0;
   bottom: 0;
-  height: calc(120px + env(safe-area-inset-bottom));
+  height: calc(176px + env(safe-area-inset-bottom));
   background: #fff;
   z-index: 9;
   pointer-events: none;
@@ -198,7 +203,9 @@ const SheetContent = styled.div`
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding-bottom: 8px;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: calc(24px + env(safe-area-inset-bottom));
 
   &::-webkit-scrollbar {
     display: none;
@@ -1404,7 +1411,7 @@ const MapPage = () => {
         </>
       )}
 
-      <BottomNavComponent />
+      <BottomNavComponent hideTopShadow />
     </Container>
   );
 };
