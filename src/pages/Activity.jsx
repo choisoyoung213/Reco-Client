@@ -4,8 +4,8 @@ import { BarChart, Bar, XAxis, YAxis, Cell } from "recharts";
 import { useNavigate } from "react-router-dom";
 import BottomNavComponent from "../components/BottomNav";
 import BiumAct from "../assets/img/Bium_act.svg";
-import ChevronDown from "../assets/img/down.svg";
-import ChevronUp from "../assets/img/up.svg";
+import ChevronUp from "../assets/img/down.svg";
+import ChevronDown from "../assets/img/up.svg";
 import { getRequiredEnv } from "../config/env";
 import { getCurrentUserName } from "../services/authUser";
 
