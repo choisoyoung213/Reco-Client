@@ -24,7 +24,8 @@ const NavContainer = styled.div`
   width: 393px;
   height: 88px;
   background: #fff;
-  box-shadow: 0px -1px 8.3px rgba(0, 0, 0, 0.1);
+  box-shadow: ${({ $hideTopShadow }) =>
+    $hideTopShadow ? "none" : "0px -1px 8.3px rgba(0, 0, 0, 0.1)"};
   display: flex;
   justify-content: space-around;
   align-items: center;
@@ -61,7 +62,7 @@ const CameraWrapper = styled.div`
 
 const StyledCameraIcon = styled.img` width: 32px; height: 32px; object-fit: contain; `;
 
-const BottomNavComponent = ({ onCapture }) => {
+const BottomNavComponent = ({ onCapture, hideTopShadow = false }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -80,7 +81,7 @@ const BottomNavComponent = ({ onCapture }) => {
   };
 
   return (
-    <NavContainer>
+    <NavContainer $hideTopShadow={hideTopShadow}>
       <NavItem onClick={() => navigate('/')}>
         <NavIcon src={isHome ? HomeOnIcon : HomeIcon} />Home
       </NavItem>
